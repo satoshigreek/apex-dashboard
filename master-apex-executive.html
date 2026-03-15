@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex Fusion — Master Executive Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #06070c;
+    --surface: #0f1119;
+    --surface-alt: #161924;
+    --surface-hover: #1c1f2e;
+    --text: #e8eaf0;
+    --text-dim: #7c8098;
+    --text-muted: #555872;
+    --accent: #f59e0b;
+    --accent-glow: rgba(245,158,11,0.12);
+    --accent-hover: #fbbf24;
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.15);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.15);
+    --yellow: #eab308;
+    --yellow-dim: rgba(234,179,8,0.15);
+    --cyan: #06b6d4;
+    --cyan-dim: rgba(6,182,212,0.15);
+    --purple: #a855f7;
+    --purple-dim: rgba(168,85,247,0.15);
+    --orange: #f97316;
+    --orange-dim: rgba(249,115,22,0.15);
+    --indigo: #6366f1;
+    --indigo-dim: rgba(99,102,241,0.15);
+    --border: #1a1d2e;
+    --border-light: #282c42;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.6; min-height: 100vh; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .skeleton { background: linear-gradient(90deg, var(--surface-alt) 25%, var(--surface-hover) 50%, var(--surface-alt) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; display: inline-block; }
+  .app { max-width: 1520px; margin: 0 auto; padding: 20px 28px; }
+
+  /* Header */
+  header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #ef4444); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; color: white; box-shadow: 0 4px 20px rgba(245,158,11,0.35); }
+  .logo h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo h1 span { color: var(--text-dim); font-weight: 400; font-size: 13px; margin-left: 8px; }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .chain-tab { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); }
+  .chain-tab .dot { width: 6px; height: 6px; border-radius: 50%; animation: pulse 2s infinite; }
+  .chain-tab.prime .dot { background: var(--accent); }
+  .chain-tab.vector .dot { background: var(--indigo); }
+  .chain-tab.nexus .dot { background: var(--green); }
+  .chain-tab.offline .dot { background: var(--red); animation: none; }
+  .status-badge { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; font-size: 11px; font-family: var(--mono); }
+  .refresh-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .refresh-btn.spinning svg { animation: spin 1s linear infinite; }
+  .csv-all-btn { background: linear-gradient(135deg, var(--green-dim), var(--cyan-dim)); border: 1px solid rgba(34,197,94,0.3); color: var(--green); padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+  .csv-all-btn:hover { background: var(--green-dim); border-color: var(--green); }
+
+  /* Chain Banners */
+  .chain-banners { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .chain-banner { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; }
+  .chain-banner::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .chain-banner.prime::before { background: linear-gradient(90deg, var(--accent), var(--orange)); }
+  .chain-banner.vector::before { background: linear-gradient(90deg, var(--indigo), var(--purple)); }
+  .chain-banner.nexus::before { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+  .chain-banner.nexus .label { background: var(--green-dim); color: var(--green); }
+  .chain-banner-left { display: flex; flex-direction: column; gap: 1px; }
+  .chain-banner-name { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .chain-banner-name .label { font-size: 9px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
+  .chain-banner.prime .label { background: var(--accent-glow); color: var(--accent-hover); }
+  .chain-banner.vector .label { background: var(--indigo-dim); color: #818cf8; }
+  .chain-banner-desc { font-size: 11px; color: var(--text-dim); }
+  .chain-banner-stats { display: flex; gap: 18px; }
+  .chain-stat { text-align: right; }
+  .chain-stat-val { font-size: 18px; font-weight: 700; font-family: var(--mono); letter-spacing: -0.5px; }
+  .chain-stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim); }
+
+  /* KPI Grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; transition: all 0.25s; animation: fadeIn 0.4s ease-out; position: relative; overflow: hidden; }
+  .kpi-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+  .kpi-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-dim); margin-bottom: 4px; }
+  .kpi-value { font-size: 20px; font-weight: 700; font-family: var(--mono); letter-spacing: -0.5px; }
+  .kpi-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-family: var(--mono); }
+
+  /* Section divider */
+  .section-divider { display: flex; align-items: center; gap: 10px; margin: 24px 0 16px; color: var(--text-dim); }
+  .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-divider .title { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+  .section-divider .badge { font-size: 9px; font-family: var(--mono); padding: 2px 7px; border-radius: 10px; background: var(--surface-alt); color: var(--text-muted); }
+
+  /* Grids */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 1100px) { .grid-3 { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .grid-2, .chain-banners { grid-template-columns: 1fr; } }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .card-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 12px; }
+  .card-body { padding: 0; }
+  .card-body.padded { padding: 16px; }
+
+  /* Tables */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { text-align: left; padding: 8px 12px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); border-bottom: 1px solid var(--border); background: var(--surface-alt); }
+  .data-table td { padding: 8px 12px; font-size: 11px; border-bottom: 1px solid var(--border); font-family: var(--mono); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--surface-hover); }
+
+  /* Tags */
+  .tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 5px; font-size: 9px; font-weight: 600; font-family: var(--mono); }
+  .tag-green { background: var(--green-dim); color: var(--green); }
+  .tag-red { background: var(--red-dim); color: var(--red); }
+  .tag-yellow { background: var(--yellow-dim); color: var(--yellow); }
+  .tag-cyan { background: var(--cyan-dim); color: var(--cyan); }
+  .tag-purple { background: var(--purple-dim); color: var(--purple); }
+  .tag-accent { background: var(--accent-glow); color: var(--accent-hover); }
+  .tag-indigo { background: var(--indigo-dim); color: #818cf8; }
+  .tag-orange { background: var(--orange-dim); color: var(--orange); }
+  .hash { color: var(--text-dim); font-size: 10px; }
+
+  /* Pool rows */
+  .pool-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  .pool-row:last-child { border-bottom: none; }
+  .pool-row:hover { background: var(--surface-hover); }
+  .pool-info { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  .pool-name { font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .pool-ticker { font-size: 10px; font-family: var(--mono); font-weight: 700; color: var(--accent-hover); background: var(--accent-glow); padding: 1px 5px; border-radius: 3px; }
+  .pool-id { font-family: var(--mono); font-size: 9px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pool-stats { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .pool-stat { text-align: right; }
+  .pool-stat-val { font-family: var(--mono); font-size: 11px; font-weight: 600; }
+  .pool-stat-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+
+  /* Contract rows */
+  .contract-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .contract-row:last-child { border-bottom: none; }
+  .contract-row:hover { background: var(--surface-hover); }
+  .contract-info { display: flex; flex-direction: column; gap: 1px; }
+  .contract-name { font-weight: 600; font-size: 12px; }
+  .contract-addr { font-family: var(--mono); font-size: 9px; color: var(--text-muted); }
+
+  /* Feed */
+  .feed-item { display: flex; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item:hover { background: var(--surface-hover); }
+  .feed-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .feed-content { flex: 1; min-width: 0; }
+  .feed-title { font-size: 11px; font-weight: 500; }
+  .feed-meta { font-size: 9px; color: var(--text-muted); font-family: var(--mono); margin-top: 1px; }
+
+  /* Param grid */
+  .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .param-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 12px; border-bottom: 1px solid var(--border); font-size: 11px; }
+  .param-row:last-child { border-bottom: none; }
+  .param-row:nth-child(odd) { background: var(--surface-alt); }
+  .param-key { color: var(--text-dim); font-size: 10px; }
+  .param-val { font-family: var(--mono); font-size: 11px; font-weight: 600; }
+
+  /* Scrollable */
+  .card-scroll { max-height: 380px; overflow-y: auto; }
+  .card-scroll::-webkit-scrollbar { width: 4px; }
+  .card-scroll::-webkit-scrollbar-track { background: transparent; }
+  .card-scroll::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+
+  /* Pool summary */
+  .pool-summary { display: flex; gap: 20px; padding: 10px 14px; background: var(--surface-alt); border-bottom: 1px solid var(--border); font-size: 11px; }
+  .pool-summary-item { display: flex; flex-direction: column; }
+  .pool-summary-val { font-family: var(--mono); font-weight: 700; font-size: 14px; }
+  .pool-summary-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); }
+
+  /* CSV button in cards */
+  .csv-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); padding: 3px 8px; border-radius: 6px; cursor: pointer; font-size: 9px; font-family: var(--mono); transition: all 0.2s; }
+  .csv-btn:hover { border-color: var(--green); color: var(--green); }
+
+  .error-banner { background: var(--red-dim); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius-sm); padding: 8px 14px; font-size: 11px; color: var(--red); margin-bottom: 12px; display: none; align-items: center; gap: 6px; }
+  .error-banner.visible { display: flex; }
+  .empty-state { padding: 30px 14px; text-align: center; color: var(--text-muted); font-size: 11px; }
+
+  footer { margin-top: 32px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: 10px; flex-wrap: wrap; gap: 10px; }
+  footer a { color: var(--accent-hover); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 768px) { .app { padding: 12px; } .kpi-grid { grid-template-columns: 1fr 1fr; } .kpi-value { font-size: 18px; } .param-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+  /* ═══ MARKET SECTION STYLES ═══ */
+  .sources-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .source-badge { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); }
+  .source-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+
+  .hero { display: flex; align-items: flex-start; gap: 32px; margin-bottom: 28px; flex-wrap: wrap; }
+  .hero-left { flex: 1; min-width: 320px; }
+  .hero-title { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .hero-title img { width: 36px; height: 36px; border-radius: 50%; }
+  .hero-title h2 { font-size: 22px; font-weight: 700; }
+  .hero-title .rank { background: var(--surface-alt); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-dim); }
+  .hero-price { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; font-family: var(--mono); }
+  .hero-sub { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .hero-sub .change { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  .hero-sub .change.up { background: var(--green-dim); color: var(--green); }
+  .hero-sub .change.down { background: var(--red-dim); color: var(--red); }
+  .hero-sub .btc-price { font-size: 13px; color: var(--text-dim); font-family: var(--mono); }
+  .hero-sub .eth-price { font-size: 13px; color: var(--text-dim); font-family: var(--mono); }
+  .hero-range { margin-top: 12px; }
+  .hero-range-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+  .hero-range-bar { width: 100%; height: 6px; background: var(--surface-alt); border-radius: 3px; overflow: hidden; }
+  .hero-range-fill { height: 100%; background: linear-gradient(90deg, var(--red), var(--accent), var(--green)); border-radius: 3px; }
+  .hero-right { flex: 1; min-width: 320px; }
+  .sparkline-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; height: 180px; position: relative; }
+  .sparkline-wrap canvas { width: 100%; height: 100%; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; animation: fadeIn 0.4s ease; }
+  .stat-card .label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-card .value { font-size: 20px; font-weight: 700; font-family: var(--mono); }
+  .stat-card .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  .changes-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .change-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+  .change-card .period { font-size: 11px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+  .change-card .pct { font-size: 18px; font-weight: 700; font-family: var(--mono); }
+  .change-card .pct.up { color: var(--green); }
+  .change-card .pct.down { color: var(--red); }
+
+  .pair-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 12px; transition: background 0.15s; }
+  .pair-row:hover { background: var(--surface-hover); }
+  .pair-row.header { color: var(--text-dim); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; background: var(--surface-alt); position: sticky; top: 0; z-index: 1; }
+  .pair-name { display: flex; flex-direction: column; gap: 2px; }
+  .pair-name .sym { font-weight: 700; font-size: 13px; }
+  .pair-name .dex { font-size: 10px; color: var(--text-dim); }
+  .pair-name .chain-badge { display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px; }
+  .pair-name .chain-base { background: rgba(0,82,255,0.15); color: #4d9fff; }
+  .pair-name .chain-cardano { background: rgba(0,51,136,0.15); color: #2e86de; }
+  .pair-name .chain-cex { background: rgba(245,158,11,0.15); color: var(--accent); }
+  .pair-val { font-family: var(--mono); font-size: 12px; text-align: right; }
+  .pair-val.up { color: var(--green); }
+  .pair-val.down { color: var(--red); }
+
+  .vol-agg { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface-alt); }
+  .vol-agg-item { display: flex; flex-direction: column; }
+  .vol-agg-item .vol-label { font-size: 10px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; }
+  .vol-agg-item .vol-val { font-size: 16px; font-weight: 700; font-family: var(--mono); }
+
+  .supply-visual { padding: 18px; }
+  .supply-bar-mkt { width: 100%; height: 12px; background: var(--surface-alt); border-radius: 6px; overflow: hidden; margin: 8px 0; }
+  .supply-fill-mkt { height: 100%; background: linear-gradient(90deg, var(--accent), var(--orange)); border-radius: 6px; }
+  .supply-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); }
+  .supply-labels span b { color: var(--text); }
+
+  .ath-row { display: flex; gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .ath-item { flex: 1; }
+  .ath-item .ath-label { font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-dim); }
+  .ath-item .ath-val { font-size: 16px; font-weight: 700; font-family: var(--mono); }
+  .ath-item .ath-change { font-size: 11px; }
+  .ath-item .ath-date { font-size: 10px; color: var(--text-dim); }
+
+  a.pair-link { color: var(--accent); text-decoration: none; font-size: 11px; }
+  a.pair-link:hover { text-decoration: underline; }
+
+  .chart-container { position: relative; width: 100%; height: 260px; padding: 12px; }
+  .chart-container canvas { max-width: 100%; max-height: 100%; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <img class="logo-icon" src="apex-logo.jpg" alt="Apex Fusion" style="object-fit:cover;">
+      <h1>Apex Fusion<span>Master Executive Dashboard</span></h1>
+    </div>
+    <div class="header-right">
+      <div class="chain-tab prime" id="primeTab"><span class="dot"></span> Prime</div>
+      <div class="chain-tab vector" id="vectorTab"><span class="dot"></span> Vector</div>
+      <div class="chain-tab nexus" id="nexusTab"><span class="dot"></span> Nexus</div>
+      <div class="status-badge" id="clockBadge">--:--:--</div>
+      <button class="refresh-btn" id="refreshBtn" onclick="refreshAll()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+        Refresh
+      </button>
+      <button class="csv-all-btn" onclick="exportAllCSV()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Export All CSV
+      </button>
+    </div>
+  </header>
+
+  <div class="error-banner" id="errorBanner"><span id="errorText"></span></div>
+
+  <!-- Sources -->
+  <div class="sources-row">
+    <div class="source-badge"><span class="source-dot"></span>CoinGecko</div>
+    <div class="source-badge"><span class="source-dot"></span>DexScreener</div>
+    <div class="source-badge"><span class="source-dot"></span>MEXC</div>
+    <div class="source-badge"><span class="source-dot"></span>Minswap</div>
+    <div class="source-badge"><span class="source-dot"></span>Uniswap</div>
+    <div class="source-badge"><span class="source-dot"></span>Aerodrome</div>
+    <div class="source-badge"><span class="source-dot"></span>Koios</div>
+    <div class="source-badge"><span class="source-dot"></span>OSAM</div>
+    <div class="source-badge"><span class="source-dot"></span>BlockScout</div>
+  </div>
+
+  <!-- ═══ AP3X MARKET DATA ═══ -->
+  <div class="section-divider">
+    <span class="title" style="color:var(--accent-hover);">AP3X Market Overview</span>
+    <span class="badge">CoinGecko + DexScreener + TradingView</span>
+  </div>
+
+  <!-- TradingView Ticker Tape -->
+  <div style="margin-bottom:20px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);height:56px;">
+    <div class="tradingview-widget-container" style="height:100%;width:100%;">
+      <div class="tradingview-widget-container__widget" style="height:100%;width:100%;"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          {"proName": "CRYPTO:AP3XUSD", "title": "AP3X/USD"},
+          {"proName": "CRYPTO:BTCUSD", "title": "BTC/USD"},
+          {"proName": "CRYPTO:ETHUSD", "title": "ETH/USD"},
+          {"proName": "CRYPTO:ADAUSD", "title": "ADA/USD"},
+          {"proName": "CRYPTO:SOLUSD", "title": "SOL/USD"},
+          {"proName": "CRYPTO:BNBUSD", "title": "BNB/USD"},
+          {"proName": "CRYPTO:XRPUSD", "title": "XRP/USD"},
+          {"proName": "CRYPTO:DOTUSD", "title": "DOT/USD"},
+          {"proName": "CRYPTO:AVAXUSD", "title": "AVAX/USD"},
+          {"proName": "CRYPTO:LINKUSD", "title": "LINK/USD"},
+          {"proName": "CRYPTO:MATICUSD", "title": "MATIC/USD"},
+          {"proName": "CRYPTO:ATOMUSD", "title": "ATOM/USD"}
+        ],
+        "showSymbolLogo": true,
+        "isTransparent": true,
+        "displayMode": "adaptive",
+        "colorTheme": "dark",
+        "locale": "en"
+      }
+      </script>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-title">
+        <img id="heroImg" src="" alt="AP3X" style="display:none">
+        <h2>AP3X <span style="color:var(--text-dim);font-weight:400;font-size:14px;">APEX</span></h2>
+        <span class="rank" id="heroRank">--</span>
+      </div>
+      <div class="hero-price" id="heroPrice">$--</div>
+      <div class="hero-sub">
+        <span class="change" id="heroChange24h">--</span>
+        <span class="btc-price" id="heroBtc">-- BTC</span>
+        <span class="eth-price" id="heroEth">-- ETH</span>
+      </div>
+      <div class="hero-range">
+        <div class="hero-range-label"><span>24h Low: <b id="heroLow">--</b></span><span>24h High: <b id="heroHigh">--</b></span></div>
+        <div class="hero-range-bar"><div class="hero-range-fill" id="heroRangeFill" style="width:50%"></div></div>
+      </div>
+    </div>
+    <!-- sparkline removed — TradingView chart used instead -->
+  </div>
+
+  <!-- Price changes -->
+  <div class="changes-row">
+    <div class="change-card"><div class="period">1 Hour</div><div class="pct" id="chg1h">--</div></div>
+    <div class="change-card"><div class="period">24 Hours</div><div class="pct" id="chg24h">--</div></div>
+    <div class="change-card"><div class="period">7 Days</div><div class="pct" id="chg7d">--</div></div>
+    <div class="change-card"><div class="period">14 Days</div><div class="pct" id="chg14d">--</div></div>
+    <div class="change-card"><div class="period">30 Days</div><div class="pct" id="chg30d">--</div></div>
+  </div>
+
+  <!-- TradingView AP3X Advanced Chart -->
+  <div class="card" style="margin-bottom:24px;overflow:hidden;">
+    <div class="card-header">
+      <span>AP3X / USD — TradingView Chart</span>
+      <a href="https://www.tradingview.com/symbols/CRYPTO-AP3XUSD/" target="_blank" rel="noopener" style="color:var(--purple);font-size:10px;text-decoration:none;">Open on TradingView &#8599;</a>
+    </div>
+    <div style="height:500px;">
+      <div class="tradingview-widget-container" style="height:100%;width:100%;">
+        <div class="tradingview-widget-container__widget" style="height:100%;width:100%;"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+        {
+          "autosize": true,
+          "symbol": "CRYPTO:AP3XUSD",
+          "interval": "D",
+          "timezone": "Etc/UTC",
+          "theme": "dark",
+          "style": "1",
+          "locale": "en",
+          "backgroundColor": "rgba(15, 17, 25, 1)",
+          "gridColor": "rgba(26, 29, 46, 0.5)",
+          "hide_top_toolbar": false,
+          "hide_legend": false,
+          "hide_volume": false,
+          "hide_side_toolbar": false,
+          "allow_symbol_change": true,
+          "calendar": false,
+          "details": true,
+          "hotlist": false,
+          "studies": ["MASimple@tv-basicstudies", "RSI@tv-basicstudies"],
+          "support_host": "https://www.tradingview.com"
+        }
+        </script>
+      </div>
+    </div>
+  </div>
+
+  <!-- Market Stat grid -->
+  <div class="stat-grid">
+    <div class="stat-card"><div class="label">Market Cap</div><div class="value" id="statMcap">--</div><div class="sub" id="statMcapSub"></div></div>
+    <div class="stat-card"><div class="label">Fully Diluted Valuation</div><div class="value" id="statFdv">--</div></div>
+    <div class="stat-card"><div class="label">24h Volume (Combined)</div><div class="value" id="statVol">--</div><div class="sub" id="statVolSub"></div></div>
+    <div class="stat-card"><div class="label">Vol / Market Cap</div><div class="value" id="statVolMcap">--</div></div>
+    <div class="stat-card"><div class="label">Circulating Supply</div><div class="value" id="statCirc">--</div><div class="sub" id="statCircSub"></div></div>
+    <div class="stat-card"><div class="label">Max Supply</div><div class="value" id="statMax">--</div></div>
+    <div class="stat-card"><div class="label">Total DEX Liquidity</div><div class="value" id="statLiq">--</div><div class="sub" id="statLiqSub"></div></div>
+    <div class="stat-card"><div class="label">Active Trading Pairs</div><div class="value" id="statPairs">--</div></div>
+  </div>
+
+  <!-- Supply Distribution + ATH/ATL -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-header"><span>Supply Distribution</span></div>
+    <div class="supply-visual">
+      <div class="supply-labels"><span>Circulating: <b id="mktSupplyCirc">--</b></span><span>Max: <b id="mktSupplyMax">--</b></span></div>
+      <div class="supply-bar-mkt"><div class="supply-fill-mkt" id="mktSupplyFill" style="width:50%"></div></div>
+      <div class="supply-labels"><span id="mktSupplyPct">--</span><span>3,000,000,000 AP3X</span></div>
+    </div>
+    <div class="ath-row">
+      <div class="ath-item">
+        <div class="ath-label">All-Time High</div>
+        <div class="ath-val" id="athVal">--</div>
+        <div class="ath-change down" id="athChange">--</div>
+        <div class="ath-date" id="athDate">--</div>
+      </div>
+      <div class="ath-item">
+        <div class="ath-label">All-Time Low</div>
+        <div class="ath-val" id="atlVal">--</div>
+        <div class="ath-change up" id="atlChange">--</div>
+        <div class="ath-date" id="atlDate">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TradingView Market Overview -->
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="card" style="overflow:hidden;">
+      <div class="card-header"><span>Crypto Market Heatmap</span></div>
+      <div style="height:360px;">
+        <div class="tradingview-widget-container" style="height:100%;width:100%;">
+          <div class="tradingview-widget-container__widget" style="height:100%;width:100%;"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-crypto-coins-heatmap.js" async>
+          {
+            "dataSource": "Crypto",
+            "blockSize": "market_cap_calc",
+            "blockColor": "change",
+            "locale": "en",
+            "symbolUrl": "",
+            "colorTheme": "dark",
+            "hasTopBar": false,
+            "isDataSet498Enabled": false,
+            "isZoomEnabled": true,
+            "hasSymbolTooltip": true,
+            "autosize": true
+          }
+          </script>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="overflow:hidden;">
+      <div class="card-header"><span>Top Crypto Prices</span></div>
+      <div style="height:360px;">
+        <div class="tradingview-widget-container" style="height:100%;width:100%;">
+          <div class="tradingview-widget-container__widget" style="height:100%;width:100%;"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
+          {
+            "width": "100%",
+            "height": "100%",
+            "defaultColumn": "overview",
+            "screener_type": "crypto_mkt",
+            "displayCurrency": "USD",
+            "colorTheme": "dark",
+            "locale": "en",
+            "isTransparent": true
+          }
+          </script>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- News Feed -->
+  <div class="section-divider">
+    <span class="title" style="color:var(--accent-hover);">Latest News</span>
+    <span class="badge">Google News</span>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-header"><span>Apex Fusion &amp; Crypto News</span><span class="tag tag-accent" id="newsCountTag">--</span></div>
+    <div class="card-body card-scroll" id="newsBody"><div class="empty-state">Loading news...</div></div>
+  </div>
+
+  <!-- Chain Banners -->
+  <div class="chain-banners">
+    <div class="chain-banner prime">
+      <div class="chain-banner-left">
+        <div class="chain-banner-name">Prime Chain <span class="label">L1 Settlement</span></div>
+        <div class="chain-banner-desc">Cardano-based consensus &middot; SPO staking &middot; Mainnet + Testnet APIs</div>
+      </div>
+      <div class="chain-banner-stats">
+        <div class="chain-stat"><div class="chain-stat-val" id="primePools">--</div><div class="chain-stat-label">Stake Pools</div></div>
+        <div class="chain-stat"><div class="chain-stat-val" id="primeDelegators">--</div><div class="chain-stat-label">Delegators</div></div>
+        <div class="chain-stat"><div class="chain-stat-val" id="primeLiveStake">--</div><div class="chain-stat-label">Live Stake</div></div>
+      </div>
+    </div>
+    <div class="chain-banner vector">
+      <div class="chain-banner-left">
+        <div class="chain-banner-name">Vector Chain <span class="label">UTXO L2</span></div>
+        <div class="chain-banner-desc">PlutusV3 &middot; Conway era &middot; AP3X native coin</div>
+      </div>
+      <div class="chain-banner-stats">
+        <div class="chain-stat"><div class="chain-stat-val" id="vectorEpoch">--</div><div class="chain-stat-label">Epoch</div></div>
+        <div class="chain-stat"><div class="chain-stat-val" id="vectorBlock">--</div><div class="chain-stat-label">Block Height</div></div>
+        <div class="chain-stat"><div class="chain-stat-val" id="vectorAccounts">--</div><div class="chain-stat-label">Accounts</div></div>
+      </div>
+    </div>
+    <div class="chain-banner nexus">
+      <div class="chain-banner-left">
+        <div class="chain-banner-name">Nexus Chain <span class="label">EVM L2</span></div>
+        <div class="chain-banner-desc">IBFT 2.0 &middot; Polygon Edge &middot; EVM compatible</div>
+      </div>
+      <div class="chain-banner-stats">
+        <div class="chain-stat"><div class="chain-stat-val" id="nexusBlock">--</div><div class="chain-stat-label">Block Height</div></div>
+        <div class="chain-stat"><div class="chain-stat-val" id="nexusTxns">--</div><div class="chain-stat-label">Transactions</div></div>
+        <div class="chain-stat"><div class="chain-stat-val" id="nexusWallets">--</div><div class="chain-stat-label">Wallets</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--accent)"></div><div class="kpi-label">Prime SPOs</div><div class="kpi-value" id="kpiSPOs">--</div><div class="kpi-sub" id="kpiSPOsSub">loading</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--orange)"></div><div class="kpi-label">Prime Epoch</div><div class="kpi-value" id="kpiPrimeEpoch">--</div><div class="kpi-sub" id="kpiPrimeEpochSub">loading</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--green)"></div><div class="kpi-label">Total Supply</div><div class="kpi-value" id="kpiSupply">--</div><div class="kpi-sub" id="kpiSupplySub">loading</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--cyan)"></div><div class="kpi-label">Vector Slot</div><div class="kpi-value" id="kpiSlot">--</div><div class="kpi-sub" id="kpiSlotSub">loading</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--indigo)"></div><div class="kpi-label">Stake Accounts</div><div class="kpi-value" id="kpiAccounts">--</div><div class="kpi-sub" id="kpiAccountsSub">Vector testnet</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--purple)"></div><div class="kpi-label">Native Assets</div><div class="kpi-value" id="kpiAssets">--</div><div class="kpi-sub" id="kpiAssetsSub">on Vector</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--yellow)"></div><div class="kpi-label">Plutus Scripts</div><div class="kpi-value" id="kpiPlutus">--</div><div class="kpi-sub" id="kpiPlutusSub">deployed</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--red)"></div><div class="kpi-label">Protocol</div><div class="kpi-value" id="kpiProtocol">--</div><div class="kpi-sub" id="kpiProtocolSub">Conway era</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--green)"></div><div class="kpi-label">Nexus Block</div><div class="kpi-value" id="kpiNexusBlock">--</div><div class="kpi-sub" id="kpiNexusBlockSub">5s block time</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--cyan)"></div><div class="kpi-label">Nexus Wallets</div><div class="kpi-value" id="kpiNexusWallets">--</div><div class="kpi-sub" id="kpiNexusWalletsSub">EVM addresses</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--orange)"></div><div class="kpi-label">Nexus Txns</div><div class="kpi-value" id="kpiNexusTxns">--</div><div class="kpi-sub" id="kpiNexusTxnsSub">total</div></div>
+    <div class="kpi-card"><div class="kpi-bar" style="background:var(--purple)"></div><div class="kpi-label">Nexus Contracts</div><div class="kpi-value" id="kpiNexusContracts">--</div><div class="kpi-sub" id="kpiNexusContractsSub">deployed</div></div>
+  </div>
+
+  <!-- ═══ PRIME CHAIN ═══ -->
+  <div class="section-divider">
+    <span class="title" style="color:var(--accent-hover);">Prime Chain — Stake Pool Operators</span>
+    <span class="badge">Explorer + OSAM API</span>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><span>Stake Pools</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag tag-accent" id="poolCountTag">--</span><button class="csv-btn" onclick="exportCSV('prime-pools')">CSV</button></div></div>
+      <div id="poolSummaryBar" class="pool-summary" style="display:none;">
+        <div class="pool-summary-item"><span class="pool-summary-val" id="sumActivePools">--</span><span class="pool-summary-label">Active</span></div>
+        <div class="pool-summary-item"><span class="pool-summary-val" id="sumTotalStake">--</span><span class="pool-summary-label">Total Staked</span></div>
+        <div class="pool-summary-item"><span class="pool-summary-val" id="sumDelegators">--</span><span class="pool-summary-label">Delegators</span></div>
+      </div>
+      <div class="card-body card-scroll" id="poolsBody"><div class="empty-state">Loading stake pools...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Pool Analytics</span><span class="tag tag-accent">distribution</span></div>
+      <div class="card-body card-scroll" id="poolAnalyticsBody"><div class="empty-state">Loading analytics...</div></div>
+    </div>
+  </div>
+
+  <!-- Prime Tokens -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><span>Prime Tokens</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag tag-accent" id="primeTokenCount">--</span><button class="csv-btn" onclick="exportCSV('prime-tokens')">CSV</button></div></div>
+      <div class="card-body card-scroll" id="primeTokensBody"><div class="empty-state">Loading tokens...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Prime Top Addresses</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag tag-accent" id="primeAddrCount">--</span><button class="csv-btn" onclick="exportCSV('prime-addresses')">CSV</button></div></div>
+      <div class="card-body card-scroll" id="primeAddressesBody"><div class="empty-state">Loading addresses...</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ VECTOR CHAIN ═══ -->
+  <div class="section-divider">
+    <span class="title" style="color:#818cf8;">Vector Chain — Blocks, Contracts & Assets</span>
+    <span class="badge">Koios API</span>
+  </div>
+
+  <!-- Supply & Economics -->
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-header"><span>Supply & Economics</span><span class="tag tag-indigo">AP3X</span></div>
+      <div class="card-body" id="supplyBody"><div class="empty-state">Loading supply...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Vector Pools</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag tag-indigo" id="vectorPoolCount">--</span><button class="csv-btn" onclick="exportCSV('vector-pools')">CSV</button></div></div>
+      <div class="card-body card-scroll" id="vectorPoolsBody"><div class="empty-state">Loading pools...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Stake Accounts</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag tag-indigo" id="accountCountTag">--</span><button class="csv-btn" onclick="exportCSV('vector-accounts')">CSV</button></div></div>
+      <div class="card-body card-scroll" id="accountsBody"><div class="empty-state">Loading accounts...</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><span>Recent Blocks</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag tag-indigo" id="blockCount">--</span><button class="csv-btn" onclick="exportCSV('vector-blocks')">CSV</button></div></div>
+      <div class="card-body card-scroll" id="blocksBody"><div class="empty-state">Loading blocks...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Smart Contract Monitor</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag tag-purple" id="scriptCountTag">--</span><button class="csv-btn" onclick="exportCSV('vector-scripts')">CSV</button></div></div>
+      <div class="card-body card-scroll" id="contractsBody"><div class="empty-state">Loading contracts...</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><span>Native Assets</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag tag-cyan" id="assetCountTag">--</span><button class="csv-btn" onclick="exportCSV('vector-assets')">CSV</button></div></div>
+      <div class="card-body card-scroll" id="assetsBody"><div class="empty-state">Loading assets...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Vector Protocol Parameters</span><span class="tag tag-indigo" id="paramsEpoch">--</span></div>
+      <div class="card-body" id="paramsBody"><div class="empty-state">Loading parameters...</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ NEXUS CHAIN ═══ -->
+  <div class="section-divider">
+    <span class="title" style="color:var(--green);">Nexus Chain — EVM Network</span>
+    <span class="badge">BlockScout API</span>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><span>Network Overview</span><span class="tag" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.25);">IBFT 2.0</span></div>
+      <div class="card-body" id="nexusOverviewBody" style="padding:18px;"><div class="empty-state">Loading Nexus data...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Top Wallet Addresses</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.25);" id="nexusAddrCount">--</span><button class="csv-btn" onclick="exportCSV('nexus-wallets')">CSV</button></div></div>
+      <div class="card-body card-scroll" id="nexusWalletsBody"><div class="empty-state">Loading wallets...</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><span>Smart Contracts</span><div style="display:flex;gap:6px;align-items:center;"><span class="tag" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.25);" id="nexusContractCount">--</span><button class="csv-btn" onclick="exportCSV('nexus-contracts')">CSV</button></div></div>
+      <div class="card-body card-scroll" id="nexusContractsBody"><div class="empty-state">Loading contracts...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Recent Transactions</span><span class="tag" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.25);">latest</span></div>
+      <div class="card-body card-scroll" id="nexusTxnsBody"><div class="empty-state">Loading transactions...</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ TRADING PAIRS ═══ -->
+  <div class="section-divider">
+    <span class="title" style="color:var(--accent-hover);">Trading Pairs</span>
+    <span class="badge">CEX + DEX Combined</span>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-header">
+      <span>All Markets</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="tag tag-accent" id="pairsCountTag">--</span>
+        <button class="csv-btn" onclick="exportCSV('pairs')">CSV</button>
+      </div>
+    </div>
+    <div class="vol-agg" id="volAgg">
+      <div class="vol-agg-item"><span class="vol-label">Total 24h Volume</span><span class="vol-val" id="aggVol24">--</span></div>
+      <div class="vol-agg-item"><span class="vol-label">CEX Volume</span><span class="vol-val" id="aggVolCex">--</span></div>
+      <div class="vol-agg-item"><span class="vol-label">DEX Volume</span><span class="vol-val" id="aggVolDex">--</span></div>
+      <div class="vol-agg-item"><span class="vol-label">Total Liquidity</span><span class="vol-val" id="aggLiq">--</span></div>
+      <div class="vol-agg-item"><span class="vol-label">24h Txns</span><span class="vol-val" id="aggTxns">--</span></div>
+    </div>
+    <div class="card-body card-scroll">
+      <div class="pair-row header">
+        <div>Pair / Exchange</div>
+        <div style="text-align:right">Price</div>
+        <div style="text-align:right">24h Volume</div>
+        <div style="text-align:right">Liquidity</div>
+        <div style="text-align:right">24h Change</div>
+        <div style="text-align:right">Buys / Sells</div>
+        <div style="text-align:right">Spread</div>
+      </div>
+      <div id="pairsBody"><div class="empty-state">Loading trading pairs...</div></div>
+    </div>
+  </div>
+
+  <!-- DEX Pair Analytics -->
+  <div class="section-divider">
+    <span class="title" style="color:var(--accent-hover);">DEX Pair Analytics</span>
+    <span class="badge">DexScreener</span>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><span>Volume by DEX (24h)</span></div>
+      <div class="card-body" id="volByDex" style="padding:18px;"><div class="empty-state">Loading...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Liquidity by Pair</span></div>
+      <div class="card-body" id="liqByPair" style="padding:18px;"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- Transaction Activity -->
+  <div class="section-divider">
+    <span class="title" style="color:var(--accent-hover);">Transaction Activity (24h)</span>
+    <span class="badge">All DEX Pairs</span>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-header"><span>Buy vs Sell Pressure</span></div>
+    <div class="card-body" id="txnActivity" style="padding:18px;"><div class="empty-state">Loading...</div></div>
+  </div>
+
+  <!-- ═══ BRIDGED TOKEN — bAP3X on Base ═══ -->
+  <div class="section-divider">
+    <span class="title" style="color:var(--cyan);">Bridged Token — bAP3X on Base</span>
+    <span class="badge">BaseScan + DexScreener</span>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="card-header">
+        <span>bAP3X Token Overview</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="tag" style="background:rgba(0,82,255,0.15);color:#4d9fff;">Base Chain</span>
+          <a href="https://basescan.org/token/0x9208d82F121806A34a39bB90733b4C5c54F3993e" target="_blank" rel="noopener" style="color:var(--cyan);font-size:10px;text-decoration:none;">BaseScan &#8599;</a>
+        </div>
+      </div>
+      <div class="card-body" id="bridgedOverviewBody" style="padding:0;"><div class="empty-state">Loading bAP3X data...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>Bridge Liquidity</span><span class="tag" style="background:rgba(0,82,255,0.15);color:#4d9fff;" id="bridgedPairCount">--</span></div>
+      <div class="chart-container"><canvas id="bridgeLiqChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-header">
+      <span>bAP3X Trading Pairs on Base</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="tag" style="background:rgba(0,82,255,0.15);color:#4d9fff;" id="bridgedPairsTag">--</span>
+        <button class="csv-btn" onclick="exportCSV('bridged-pairs')">CSV</button>
+      </div>
+    </div>
+    <div class="card-body card-scroll">
+      <div class="pair-row header">
+        <div>Pair / DEX</div>
+        <div style="text-align:right">Price</div>
+        <div style="text-align:right">24h Volume</div>
+        <div style="text-align:right">Liquidity</div>
+        <div style="text-align:right">24h Change</div>
+        <div style="text-align:right">Buys / Sells</div>
+        <div style="text-align:right">Created</div>
+      </div>
+      <div id="bridgedPairsBody"><div class="empty-state">Loading bAP3X pairs...</div></div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Apex Fusion Ecosystem &middot; Vector Builder Kit &middot; Updated <span id="lastUpdate">--</span></span>
+    <span>Market: <a href="https://www.coingecko.com/en/coins/apex-4" target="_blank">CoinGecko</a> + <a href="https://dexscreener.com" target="_blank">DexScreener</a> + <a href="https://www.tradingview.com/symbols/CRYPTO-AP3XUSD/" target="_blank">TradingView</a> &middot; Prime: <a href="https://osam.apexfusion.org" target="_blank">OSAM</a> + <a href="https://beta-explorer-api.prime.testnet.apexfusion.org/api/v1" target="_blank">Explorer</a> &middot; Vector: <a href="https://koios.vector.testnet.apexfusion.org/api/v1" target="_blank">Koios</a> &middot; Nexus: <a href="https://nexus.apexscan.org" target="_blank">ApexScan</a></span>
+  </footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// API ENDPOINTS
+// ═══════════════════════════════════════════
+const KOIOS = 'https://koios.vector.testnet.apexfusion.org/api/v1';
+const OSAM = 'https://osam.apexfusion.org';
+const PRIME_EXPLORER = 'https://beta-explorer-api.prime.mainnet.apexfusion.org/api/v1';
+const PRIME_EXPLORER_TESTNET = 'https://beta-explorer-api.prime.testnet.apexfusion.org/api/v1';
+const NEXUS_EXPLORER = 'https://nexus.apexscan.org/api';
+const COINGECKO = 'https://api.coingecko.com/api/v3';
+const DEXSCREENER = 'https://api.dexscreener.com';
+
+// CSV data store
+const CSV_DATA = {};
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+const truncHash = (h, n=8) => h ? h.slice(0,n) + '\u2026' + h.slice(-n) : '--';
+const fmtNum = n => n != null ? Number(n).toLocaleString() : '--';
+function fmtLovelace(l) {
+  const v = Number(l) / 1e6;
+  if (v >= 1e9) return (v/1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
+  return v.toFixed(2);
+}
+function fmtAP3X(n) {
+  const v = Number(n);
+  if (v >= 1e9) return (v/1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
+  return v.toFixed(2);
+}
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = Math.floor(Date.now()/1000 - ts);
+  if (d < 60) return d + 's ago';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  return Math.floor(d/86400) + 'd ago';
+}
+
+// Market formatters
+function fmtUsd(n) {
+  const v = Number(n);
+  if (v >= 1e9) return '$' + (v/1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return '$' + (v/1e3).toFixed(1) + 'K';
+  if (v >= 1) return '$' + v.toFixed(2);
+  if (v >= 0.001) return '$' + v.toFixed(4);
+  return '$' + v.toFixed(6);
+}
+function fmtPrice(n) {
+  const v = Number(n);
+  if (v >= 1) return '$' + v.toFixed(2);
+  if (v >= 0.01) return '$' + v.toFixed(4);
+  return '$' + v.toFixed(5);
+}
+function fmtSupply(n) { return Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+function fmtPct(n) { const v = Number(n); if (isNaN(v)) return '--'; return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; }
+function pctClass(n) { return Number(n) >= 0 ? 'up' : 'down'; }
+function fmtDate(d) { if (!d) return '--'; return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+
+async function koiosGet(ep) { const r = await fetch(KOIOS + ep); if (!r.ok) throw new Error('Koios ' + r.status); return r.json(); }
+async function koiosPost(ep, body) { const r = await fetch(KOIOS + ep, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) }); if (!r.ok) throw new Error('Koios ' + r.status); return r.json(); }
+async function explorerGet(ep) { const r = await fetch(PRIME_EXPLORER + ep); if (!r.ok) throw new Error('Explorer ' + r.status); return r.json(); }
+async function osamGet(ep) { const r = await fetch(OSAM + ep); if (!r.ok) throw new Error('OSAM ' + r.status); return r.json(); }
+
+// ═══════════════════════════════════════════
+// CSV EXPORT
+// ═══════════════════════════════════════════
+function arrayToCSV(headers, rows) {
+  const escape = v => { const s = String(v == null ? '' : v); return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  return [headers.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))].join('\n');
+}
+
+function downloadCSV(filename, csvContent) {
+  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename + '_' + new Date().toISOString().slice(0,10) + '.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function exportCSV(key) {
+  const d = CSV_DATA[key];
+  if (!d || !d.rows.length) return alert('No data loaded yet. Please wait for refresh.');
+  downloadCSV(key, arrayToCSV(d.headers, d.rows));
+}
+
+function exportAllCSV() {
+  for (const [key, d] of Object.entries(CSV_DATA)) {
+    if (d && d.rows.length > 0) downloadCSV(key, arrayToCSV(d.headers, d.rows));
+  }
+}
+
+// ═══════════════════════════════════════════
+// FETCHERS
+// ═══════════════════════════════════════════
+const fetchTip = () => koiosGet('/tip').then(d => d[0] || {});
+const fetchParams = () => koiosGet('/epoch_params?limit=1').then(d => d[0] || {});
+const fetchBlocks = () => koiosGet('/blocks?limit=15');
+const fetchTotals = () => koiosGet('/totals?limit=1').then(d => d[0] || {});
+const fetchPoolList = () => koiosGet('/pool_list');
+const fetchAccountList = () => koiosGet('/account_list');
+const fetchAssetList = () => koiosGet('/asset_list');
+const fetchNativeScripts = () => koiosGet('/native_script_list');
+const fetchPlutusScripts = () => koiosGet('/plutus_script_list');
+
+async function fetchPrimeHeader() {
+  // Try mainnet first, testnet fallback
+  try { return await explorerGet('/delegations/header'); } catch {}
+  try { const r = await fetch(PRIME_EXPLORER_TESTNET + '/delegations/header'); if (r.ok) return r.json(); } catch {}
+  return null;
+}
+async function fetchPrimePools() {
+  // OSAM mainnet first (307 pools, real saturation), then testnet fallback
+  try {
+    const d = await osamGet('/api/networks/prime_mainnet/pool-statistics');
+    const pools = d.data?.pools || d.pools || (Array.isArray(d.data) ? d.data : null);
+    if (pools && pools.length > 0) return { data: pools, source: 'osam_mainnet' };
+  } catch {}
+  try {
+    const d = await osamGet('/api/networks/prime/pool-statistics');
+    const pools = d.data?.pools || d.pools || (Array.isArray(d.data) ? d.data : null);
+    if (pools && pools.length > 0) return { data: pools, source: 'osam_testnet' };
+  } catch {}
+  try { return await explorerGet('/delegations/pool-list?page=0&size=500'); } catch { return null; }
+}
+async function fetchPrimeTokens() {
+  // Try mainnet, but fall back to testnet if mainnet has no data
+  try {
+    const d = await explorerGet('/tokens?page=0&size=100');
+    if (d && (d.totalItems > 0 || (d.data && d.data.length > 0))) return d;
+  } catch {}
+  try { const r = await fetch(PRIME_EXPLORER_TESTNET + '/tokens?page=0&size=100'); if (r.ok) return r.json(); } catch {}
+  return null;
+}
+async function fetchPrimeTopAddresses() {
+  // Fetch from both mainnet and testnet, merge results
+  const results = [];
+  try {
+    const d = await explorerGet('/addresses/top-addresses?page=0&size=100');
+    const addrs = d?.data || d?.content || (Array.isArray(d) ? d : []);
+    if (addrs.length > 0) results.push(...addrs.map(a => ({...a, network: 'mainnet'})));
+  } catch {}
+  try {
+    const r = await fetch(PRIME_EXPLORER_TESTNET + '/addresses/top-addresses?page=0&size=100');
+    if (r.ok) {
+      const d = await r.json();
+      const addrs = d?.data || d?.content || (Array.isArray(d) ? d : []);
+      if (addrs.length > 0 && results.length === 0) results.push(...addrs.map(a => ({...a, network: 'testnet'})));
+    }
+  } catch {}
+  return results.length > 0 ? { data: results } : null;
+}
+async function fetchOsamVector() { try { const d = await osamGet('/api/networks/vector_mainnet/pool-statistics'); return d.data || d; } catch { return null; } }
+
+// Nexus (BlockScout) fetchers
+async function nexusGet(params) { const r = await fetch(NEXUS_EXPLORER + '?' + params); if (!r.ok) throw new Error('Nexus ' + r.status); return r.json(); }
+async function fetchNexusBlockNumber() { try { return await nexusGet('module=block&action=eth_block_number'); } catch { return null; } }
+async function fetchNexusAccounts() { try { return await nexusGet('module=account&action=listaccounts&page=1&offset=100'); } catch { return null; } }
+async function fetchNexusContracts() {
+  const all = [];
+  for (let page = 1; page <= 5; page++) {
+    try {
+      const d = await nexusGet('module=contract&action=listcontracts&page=' + page + '&offset=100');
+      if (d.result && d.result.length > 0) all.push(...d.result); else break;
+    } catch { break; }
+  }
+  return all;
+}
+async function fetchNexusData() {
+  // Scrape stats from the explorer main page HTML
+  try {
+    const r = await fetch('https://nexus.apexscan.org');
+    if (!r.ok) return null;
+    const html = await r.text();
+    const stats = {};
+    // Extract counters from data attributes or text
+    const blockMatch = html.match(/data-selector="block-count"[^>]*>([^<]+)/i) || html.match(/"block_count"\s*:\s*"?(\d[\d,]*)/i);
+    const txMatch = html.match(/data-selector="transaction-count"[^>]*>([^<]+)/i) || html.match(/"transaction_count"\s*:\s*"?(\d[\d,]*)/i);
+    const addrMatch = html.match(/data-selector="address-count"[^>]*>([^<]+)/i) || html.match(/"address_count"\s*:\s*"?(\d[\d,]*)/i);
+    const gasMatch = html.match(/data-selector="average-gas-price"[^>]*>([^<]+)/i);
+    if (blockMatch) stats.blocks = blockMatch[1].replace(/,/g, '').trim();
+    if (txMatch) stats.txns = txMatch[1].replace(/,/g, '').trim();
+    if (addrMatch) stats.addresses = addrMatch[1].replace(/,/g, '').trim();
+    if (gasMatch) stats.gasPrice = gasMatch[1].trim();
+    return stats;
+  } catch { return null; }
+}
+
+// Market fetchers
+async function fetchCoinGecko() {
+  try { const r = await fetch(COINGECKO + '/coins/markets?vs_currency=usd&ids=apex-4&price_change_percentage=1h,24h,7d,14d,30d&sparkline=true'); if (!r.ok) return null; const d = await r.json(); return d && d.length > 0 ? d[0] : null; } catch { return null; }
+}
+async function fetchCoinGeckoTickers() {
+  try { const r = await fetch(COINGECKO + '/coins/apex-4/tickers'); if (!r.ok) return []; const d = await r.json(); return d.tickers || []; } catch { return []; }
+}
+async function fetchDexScreener() {
+  try { const r = await fetch(DEXSCREENER + '/latest/dex/search?q=AP3X'); if (!r.ok) return []; const d = await r.json(); return (d.pairs || []).filter(p => { const sym = (p.baseToken?.symbol || '').toLowerCase(); return sym === 'bap3x' || sym === 'ap3x' || sym === 'cap3x'; }); } catch { return []; }
+}
+
+// News fetcher
+async function fetchNews() {
+  const query = encodeURIComponent('Apex Fusion Crypto Blockchain');
+  const rssUrl = 'https://news.google.com/rss/search?q=' + query + '&hl=en-US&gl=US&ceid=US:en';
+  try {
+    const r = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl));
+    if (!r.ok) return [];
+    const d = await r.json();
+    const items = d.items || [];
+    // Sort newest first
+    items.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+    return items;
+  } catch { return []; }
+}
+
+// ═══════════════════════════════════════════
+// RENDERERS — NEWS
+// ═══════════════════════════════════════════
+function renderNews(items) {
+  if (!items || items.length === 0) {
+    document.getElementById('newsBody').innerHTML = '<div class="empty-state">No news found</div>';
+    document.getElementById('newsCountTag').textContent = '0';
+    return;
+  }
+  document.getElementById('newsCountTag').textContent = items.length + ' articles';
+  const colors = ['var(--accent)', 'var(--green)', 'var(--cyan)', 'var(--purple)', 'var(--orange)', 'var(--indigo)', 'var(--red)', 'var(--yellow)'];
+  let html = '';
+  items.forEach((item, i) => {
+    const title = item.title || 'Untitled';
+    const source = item.author || '';
+    const pubDate = item.pubDate ? fmtDate(item.pubDate) : '';
+    const link = item.link || '#';
+    const dotColor = colors[i % colors.length];
+    // Strip HTML from description
+    const desc = (item.description || '').replace(/<[^>]*>/g, '').slice(0, 150);
+    html += '<div class="feed-item">' +
+      '<div class="feed-dot" style="background:' + dotColor + '"></div>' +
+      '<div class="feed-content">' +
+      '<div class="feed-title"><a href="' + link + '" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;">' + title + '</a></div>' +
+      (desc ? '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">' + desc + '</div>' : '') +
+      '<div class="feed-meta">' + source + (source && pubDate ? ' · ' : '') + pubDate + '</div>' +
+      '</div></div>';
+  });
+  document.getElementById('newsBody').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// RENDERERS — PRIME
+// ═══════════════════════════════════════════
+function renderPrimeHeader(header) {
+  if (!header) return;
+  document.getElementById('primeLiveStake').textContent = fmtLovelace(header.liveStake || 0);
+  document.getElementById('kpiPrimeEpoch').textContent = fmtNum(header.epochNo);
+}
+
+function renderPrimePools(data) {
+  const primeTab = document.getElementById('primeTab');
+  if (!data) {
+    primeTab.classList.add('offline');
+    document.getElementById('poolsBody').innerHTML = '<div class="empty-state">Could not reach Prime Explorer API</div>';
+    return;
+  }
+  primeTab.classList.remove('offline');
+
+  const pools = data.data || data.content || (Array.isArray(data) ? data : []);
+  const isOsam = data.source && data.source.startsWith('osam');
+  const fmtStake = isOsam ? fmtAP3X : fmtLovelace;
+  const totalPools = pools.length;
+  let totalStake = 0;
+  let totalDelegators = 0;
+  pools.forEach(p => {
+    totalStake += Number(p.poolSize || p.totalStakedAmount || p.activeStake || 0);
+    totalDelegators += Number(p.numberDelegators || p.numDelegators || 0);
+  });
+
+  document.getElementById('primePools').textContent = fmtNum(totalPools);
+  document.getElementById('primeDelegators').textContent = fmtNum(totalDelegators);
+  document.getElementById('kpiSPOs').textContent = totalPools;
+  document.getElementById('kpiSPOsSub').textContent = 'all active';
+  document.getElementById('kpiPrimeEpochSub').textContent = fmtNum(totalDelegators) + ' delegators';
+  document.getElementById('poolCountTag').textContent = totalPools + ' pools';
+  document.getElementById('sumActivePools').textContent = totalPools;
+  document.getElementById('sumDelegators').textContent = fmtNum(totalDelegators);
+  document.getElementById('sumTotalStake').textContent = fmtStake(totalStake);
+  document.getElementById('poolSummaryBar').style.display = 'flex';
+
+  // CSV data
+  CSV_DATA['prime-pools'] = {
+    headers: ['Ticker', 'Pool Name', 'Pool ID/Hash', 'Stake (AP3X)', 'Pledge', 'Fee/Margin %', 'Saturation %', 'Delegators', 'Blocks Validated'],
+    rows: pools.map(p => [p.tickerName||p.ticker||'', p.poolName||p.title||'', p.poolId||p.poolHash||p.id||'', p.poolSize||p.totalStakedAmount||0, p.pledge||0, p.feePercent||p.margin||0, p.saturation||p.saturationPercent||0, p.numberDelegators||p.numDelegators||0, p.lifetimeBlock||p.blocksValidated||0])
+  };
+
+  // Sort by stake
+  const sorted = [...pools].sort((a,b) => Number(b.poolSize||b.totalStakedAmount||0) - Number(a.poolSize||a.totalStakedAmount||0));
+
+  let html = '';
+  for (const p of sorted.slice(0, 60)) {
+    const ticker = p.tickerName || p.ticker || '';
+    const name = p.poolName || p.title || ticker || 'Unnamed';
+    const stake = Number(p.poolSize || p.totalStakedAmount || 0);
+    const pledge = Number(p.pledge || 0);
+    const sat = Number(p.saturation || p.saturationPercent || 0);
+    const delegators = p.numberDelegators || p.numDelegators || 0;
+    const satClass = sat > 90 ? 'tag-red' : sat > 50 ? 'tag-yellow' : 'tag-green';
+
+    html += '<div class="pool-row"><div class="pool-info">' +
+      '<span class="pool-name">' + (ticker ? '<span class="pool-ticker">' + ticker + '</span> ' : '') + name + '</span>' +
+      '<span class="pool-id">' + truncHash(p.poolId || p.poolHash || p.id || '', 14) + '</span></div>' +
+      '<div class="pool-stats">' +
+      '<div class="pool-stat"><div class="pool-stat-val">' + fmtNum(delegators) + '</div><div class="pool-stat-label">Delegators</div></div>' +
+      '<div class="pool-stat"><div class="pool-stat-val">' + fmtStake(stake) + '</div><div class="pool-stat-label">Stake</div></div>' +
+      '<div class="pool-stat"><span class="tag ' + satClass + '">' + sat.toFixed(1) + '%</span><div class="pool-stat-label">Sat</div></div>' +
+      '</div></div>';
+  }
+  document.getElementById('poolsBody').innerHTML = html || '<div class="empty-state">No pools</div>';
+
+  // Analytics
+  renderPoolAnalytics(sorted, totalStake, fmtStake);
+}
+
+function renderPoolAnalytics(pools, totalStake, fmtStake) {
+  const buckets = { 'Top 1': 0, 'Top 5': 0, 'Top 10': 0, 'Others': 0 };
+  pools.forEach((p, i) => {
+    const s = Number(p.poolSize || p.totalStakedAmount || p.activeStake || 0);
+    if (i === 0) buckets['Top 1'] += s;
+    else if (i < 5) buckets['Top 5'] += s;
+    else if (i < 10) buckets['Top 10'] += s;
+    else buckets['Others'] += s;
+  });
+
+  const marginBuckets = { '0%': 0, '0-5%': 0, '5-10%': 0, '10%+': 0 };
+  pools.forEach(p => { let m = Number(p.feePercent || p.margin || 0); if (m > 0 && m < 1) m = m * 100; if (m === 0) marginBuckets['0%']++; else if (m <= 5) marginBuckets['0-5%']++; else if (m <= 10) marginBuckets['5-10%']++; else marginBuckets['10%+']++; });
+
+  let html = '<div style="padding:14px;">';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">';
+  html += '<div style="background:var(--surface-alt);border-radius:6px;padding:10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:3px;">Total Staked</div><div style="font-family:var(--mono);font-size:16px;font-weight:700;">' + fmtStake(totalStake) + '</div></div>';
+  const topPool = pools[0];
+  html += '<div style="background:var(--surface-alt);border-radius:6px;padding:10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:3px;">Largest Pool</div><div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent-hover);">' + (topPool?.tickerName || topPool?.ticker || '--') + '</div><div style="font-size:9px;color:var(--text-muted);">' + fmtStake(topPool?.poolSize || topPool?.totalStakedAmount || 0) + '</div></div>';
+  html += '</div>';
+
+  const barSection = (title, items, totalVal, colorFn) => {
+    let s = '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:8px;">' + title + '</div>';
+    for (const [label, val] of Object.entries(items)) {
+      const pct = totalVal > 0 ? (val / totalVal * 100) : 0;
+      s += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:10px;color:var(--text-dim);width:50px;">' + label + '</span><div style="flex:1;height:6px;background:var(--surface-alt);border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + (colorFn ? colorFn(label) : 'var(--indigo)') + ';border-radius:3px;"></div></div><span style="font-family:var(--mono);font-size:10px;width:45px;text-align:right;">' + pct.toFixed(1) + '%</span></div>';
+    }
+    return s;
+  };
+
+  html += barSection('Stake Concentration', buckets, totalStake, l => l==='Top 1'?'var(--accent)':l==='Top 5'?'var(--orange)':l==='Top 10'?'var(--yellow)':'var(--green)');
+  html += '<div style="margin-top:14px;"></div>';
+  html += barSection('Margin Distribution', marginBuckets, pools.length);
+  html += '</div>';
+  document.getElementById('poolAnalyticsBody').innerHTML = html;
+}
+
+function renderPrimeTokens(data) {
+  if (!data) { document.getElementById('primeTokensBody').innerHTML = '<div class="empty-state">Explorer unavailable</div>'; return; }
+  const tokens = data.data || data.content || (Array.isArray(data) ? data : []);
+  document.getElementById('primeTokenCount').textContent = (data.totalItems || tokens.length) + ' tokens';
+
+  CSV_DATA['prime-tokens'] = {
+    headers: ['Name', 'Display Name', 'Policy ID', 'Fingerprint', 'Supply', 'Holders', 'TX Count', '24h Volume', 'Total Volume', 'Created'],
+    rows: tokens.map(t => [t.name||'', t.displayName||'', t.policy||'', t.fingerprint||'', t.supply||0, t.numberOfHolders||0, t.txCount||0, t.volumeIn24h||0, t.totalVolume||0, t.createdOn||''])
+  };
+
+  let html = '<table class="data-table"><thead><tr><th>Token</th><th>Supply</th><th>Holders</th><th>Tx Count</th><th>Volume 24h</th></tr></thead><tbody>';
+  for (const t of tokens.slice(0, 40)) {
+    html += '<tr><td style="font-weight:600;color:var(--accent-hover)">' + (t.displayName || t.name || truncHash(t.fingerprint||'', 6)) + '</td>' +
+      '<td>' + fmtLovelace(t.supply || 0) + '</td>' +
+      '<td>' + fmtNum(t.numberOfHolders) + '</td>' +
+      '<td>' + fmtNum(t.txCount) + '</td>' +
+      '<td>' + fmtLovelace(t.volumeIn24h || 0) + '</td></tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('primeTokensBody').innerHTML = html;
+}
+
+function renderPrimeAddresses(data) {
+  if (!data) { document.getElementById('primeAddressesBody').innerHTML = '<div class="empty-state">Explorer unavailable</div>'; return; }
+  const addrs = data.data || data.content || (Array.isArray(data) ? data : []);
+  document.getElementById('primeAddrCount').textContent = 'top ' + addrs.length;
+
+  CSV_DATA['prime-addresses'] = {
+    headers: ['Address', 'Balance (lovelace)', 'TX Count'],
+    rows: addrs.map(a => [a.address||'', a.balance||0, a.txCount||0])
+  };
+
+  let html = '<table class="data-table"><thead><tr><th>#</th><th>Address</th><th>Balance</th><th>Txs</th></tr></thead><tbody>';
+  addrs.slice(0, 100).forEach((a, i) => {
+    html += '<tr><td style="color:var(--text-muted)">' + (i+1) + '</td>' +
+      '<td><span class="hash">' + truncHash(a.address||'', 10) + '</span></td>' +
+      '<td style="font-weight:600">' + fmtLovelace(a.balance || 0) + '</td>' +
+      '<td>' + fmtNum(a.txCount) + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('primeAddressesBody').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// RENDERERS — VECTOR
+// ═══════════════════════════════════════════
+function renderVectorKPIs(tip, params, totals) {
+  document.getElementById('vectorEpoch').textContent = fmtNum(tip.epoch_no);
+  document.getElementById('vectorBlock').textContent = fmtNum(tip.block_no);
+  document.getElementById('kpiSlot').textContent = fmtNum(tip.abs_slot);
+  document.getElementById('kpiSlotSub').textContent = tip.block_time ? timeAgo(tip.block_time) : '';
+  if (params.protocol_major) document.getElementById('kpiProtocol').textContent = params.protocol_major + '.' + (params.protocol_minor||0);
+  document.getElementById('paramsEpoch').textContent = 'Epoch ' + (tip.epoch_no||'--');
+
+  if (totals) {
+    document.getElementById('kpiSupply').textContent = fmtLovelace(totals.supply || 0);
+    document.getElementById('kpiSupplySub').textContent = 'circ: ' + fmtLovelace(totals.circulation || 0);
+    renderSupply(totals);
+  }
+}
+
+function renderSupply(t) {
+  const items = [
+    ['Total Supply', fmtLovelace(t.supply||0) + ' AP3X'],
+    ['Circulation', fmtLovelace(t.circulation||0) + ' AP3X'],
+    ['Treasury', fmtLovelace(t.treasury||0) + ' AP3X'],
+    ['Reserves', fmtLovelace(t.reserves||0) + ' AP3X'],
+    ['Rewards', fmtLovelace(t.reward||0) + ' AP3X'],
+    ['Epoch', fmtNum(t.epoch_no)],
+  ];
+  let html = '<div class="param-grid">';
+  items.forEach(([k,v]) => html += '<div class="param-row"><span class="param-key">' + k + '</span><span class="param-val">' + v + '</span></div>');
+  html += '</div>';
+  document.getElementById('supplyBody').innerHTML = html;
+}
+
+function renderVectorPools(pools) {
+  if (!pools || !pools.length) { document.getElementById('vectorPoolsBody').innerHTML = '<div class="empty-state">No pools found</div>'; document.getElementById('vectorPoolCount').textContent = '0'; return; }
+  document.getElementById('vectorPoolCount').textContent = pools.length + ' pools';
+
+  CSV_DATA['vector-pools'] = {
+    headers: ['Pool ID (bech32)', 'Pool ID (hex)', 'Ticker', 'Name', 'Active Epoch', 'Margin', 'Fixed Cost', 'Pledge', 'Reward Addr', 'Status', 'Relay DNS', 'Relay Port'],
+    rows: pools.map(p => [p.pool_id_bech32||'', p.pool_id_hex||'', p.ticker||'', p.meta_json?.name||'', p.active_epoch_no||'', p.margin||0, p.fixed_cost||0, p.pledge||0, p.reward_addr||'', p.pool_status||'', p.relays?.[0]?.dns||p.relays?.[0]?.ipv4||'', p.relays?.[0]?.port||''])
+  };
+
+  let html = '<table class="data-table"><thead><tr><th>Ticker</th><th>Pool ID</th><th>Pledge</th><th>Margin</th><th>Status</th></tr></thead><tbody>';
+  for (const p of pools) {
+    const statusTag = p.pool_status === 'registered' ? '<span class="tag tag-green">active</span>' : '<span class="tag tag-red">' + (p.pool_status||'--') + '</span>';
+    html += '<tr><td style="font-weight:600;color:#818cf8">' + (p.ticker||'--') + '</td>' +
+      '<td><span class="hash">' + truncHash(p.pool_id_bech32||'', 10) + '</span></td>' +
+      '<td>' + fmtLovelace(p.pledge||0) + '</td>' +
+      '<td>' + (Number(p.margin||0)*100).toFixed(1) + '%</td>' +
+      '<td>' + statusTag + '</td></tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('vectorPoolsBody').innerHTML = html;
+}
+
+function renderAccounts(accounts) {
+  if (!accounts) return;
+  const count = accounts.length;
+  document.getElementById('vectorAccounts').textContent = fmtNum(count);
+  document.getElementById('kpiAccounts').textContent = count;
+  document.getElementById('kpiAccountsSub').textContent = 'stake addresses';
+  document.getElementById('accountCountTag').textContent = count + ' accounts';
+
+  CSV_DATA['vector-accounts'] = {
+    headers: ['Stake Address', 'Stake Address Hex', 'Script Hash'],
+    rows: accounts.map(a => [a.stake_address||'', a.stake_address_hex||'', a.script_hash||''])
+  };
+
+  let html = '<table class="data-table"><thead><tr><th>#</th><th>Stake Address</th></tr></thead><tbody>';
+  accounts.slice(0, 50).forEach((a, i) => {
+    html += '<tr><td style="color:var(--text-muted)">' + (i+1) + '</td><td><span class="hash">' + truncHash(a.stake_address||'', 12) + '</span></td></tr>';
+  });
+  if (count > 50) html += '<tr><td colspan="2" style="color:var(--text-muted);text-align:center">... and ' + (count-50) + ' more (export CSV for full list)</td></tr>';
+  html += '</tbody></table>';
+  document.getElementById('accountsBody').innerHTML = html;
+}
+
+function renderBlocks(blocks) {
+  document.getElementById('blockCount').textContent = blocks.length + ' latest';
+
+  CSV_DATA['vector-blocks'] = {
+    headers: ['Block Height', 'Hash', 'Epoch', 'Slot', 'TX Count', 'Block Size', 'Block Time', 'Pool', 'VRF Key', 'Proto Major', 'Proto Minor'],
+    rows: blocks.map(b => [b.block_no||b.block_height||'', b.hash||'', b.epoch_no||'', b.abs_slot||'', b.tx_count||0, b.block_size||0, b.block_time||'', b.pool||'', b.vrf_key||'', b.proto_major||'', b.proto_minor||''])
+  };
+
+  let html = '<table class="data-table"><thead><tr><th>Block</th><th>Hash</th><th>Txs</th><th>Size</th><th>Pool</th><th>Age</th></tr></thead><tbody>';
+  for (const b of blocks) {
+    const size = b.block_size > 1024 ? (b.block_size/1024).toFixed(1)+'KB' : (b.block_size||0)+'B';
+    const txTag = (b.tx_count||0) > 0 ? '<span class="tag tag-green">' + b.tx_count + '</span>' : '<span class="tag" style="background:var(--surface-alt);color:var(--text-muted)">0</span>';
+    html += '<tr><td style="font-weight:600;color:#818cf8">' + fmtNum(b.block_no||b.block_height) + '</td>' +
+      '<td><span class="hash">' + truncHash(b.hash, 8) + '</span></td>' +
+      '<td>' + txTag + '</td>' +
+      '<td style="color:var(--text-dim)">' + size + '</td>' +
+      '<td><span class="hash">' + truncHash(b.pool||'', 6) + '</span></td>' +
+      '<td style="color:var(--text-dim)">' + timeAgo(b.block_time) + '</td></tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('blocksBody').innerHTML = html;
+}
+
+function renderScripts(native, plutus) {
+  const nativeCount = native ? native.length : 0;
+  const plutusCount = plutus ? plutus.length : 0;
+  const totalScripts = nativeCount + plutusCount;
+  document.getElementById('scriptCountTag').textContent = totalScripts + ' scripts';
+  document.getElementById('kpiPlutus').textContent = plutusCount;
+  document.getElementById('kpiPlutusSub').textContent = nativeCount + ' native + ' + plutusCount + ' plutus';
+
+  const allScripts = [
+    ...(plutus||[]).map(s => ({...s, category: 'Plutus'})),
+    ...(native||[]).map(s => ({...s, category: 'Native'})),
+  ];
+
+  CSV_DATA['vector-scripts'] = {
+    headers: ['Script Hash', 'Type', 'Category', 'Creation TX Hash', 'Size (bytes)'],
+    rows: allScripts.map(s => [s.script_hash||'', s.type||'', s.category||'', s.creation_tx_hash||'', s.size||''])
+  };
+
+  // Show Builder Kit contracts + deployed scripts
+  const CONTRACTS = [
+    { name: 'DEX: Limit Order', group: 'DEX' },
+    { name: 'DEX: AMM Pool', group: 'DEX' },
+    { name: 'DEX: Matcher', group: 'DEX' },
+    { name: 'Assembly: Council', group: 'Assembly' },
+    { name: 'Assembly: Registry', group: 'Assembly' },
+    { name: 'Assembly: Governance', group: 'Assembly' },
+    { name: 'Assembly: Forum', group: 'Assembly' },
+    { name: 'Assembly: Treasury', group: 'Assembly' },
+  ];
+
+  let html = '';
+  for (const c of CONTRACTS) {
+    const tagClass = c.group === 'DEX' ? 'tag-cyan' : 'tag-purple';
+    html += '<div class="contract-row"><div class="contract-info"><span class="contract-name">' + c.name + '</span><span class="contract-addr">compiled \u2022 not yet deployed</span></div><div><span class="tag ' + tagClass + '">' + c.group + '</span></div></div>';
+  }
+
+  // Add on-chain scripts
+  if (plutusCount > 0) {
+    html += '<div style="padding:8px 14px;background:var(--surface-alt);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);border-bottom:1px solid var(--border);">On-chain Plutus Scripts (' + plutusCount + ')</div>';
+    for (const s of (plutus||[]).slice(0, 20)) {
+      html += '<div class="contract-row"><div class="contract-info"><span class="contract-name" style="font-size:11px;color:var(--cyan)">' + s.type + '</span><span class="contract-addr">' + truncHash(s.script_hash||'', 14) + '</span></div><div><span class="tag tag-cyan">' + (s.size||'--') + 'B</span></div></div>';
+    }
+  }
+  if (nativeCount > 0) {
+    html += '<div style="padding:8px 14px;background:var(--surface-alt);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);border-bottom:1px solid var(--border);">Native Scripts (' + nativeCount + ')</div>';
+    for (const s of (native||[]).slice(0, 10)) {
+      html += '<div class="contract-row"><div class="contract-info"><span class="contract-name" style="font-size:11px;color:var(--yellow)">' + s.type + '</span><span class="contract-addr">' + truncHash(s.script_hash||'', 14) + '</span></div><div><span class="tag tag-yellow">' + (s.size||'--') + 'B</span></div></div>';
+    }
+  }
+  document.getElementById('contractsBody').innerHTML = html;
+}
+
+function renderAssets(assets) {
+  if (!assets) return;
+  document.getElementById('kpiAssets').textContent = assets.length;
+  document.getElementById('kpiAssetsSub').textContent = 'native tokens';
+  document.getElementById('assetCountTag').textContent = assets.length + ' assets';
+
+  CSV_DATA['vector-assets'] = {
+    headers: ['Policy ID', 'Asset Name (hex)', 'Asset Name (ASCII)', 'Fingerprint'],
+    rows: assets.map(a => [a.policy_id||'', a.asset_name||'', a.asset_name_ascii||'', a.fingerprint||''])
+  };
+
+  let html = '<table class="data-table"><thead><tr><th>Asset</th><th>Policy ID</th><th>Fingerprint</th></tr></thead><tbody>';
+  for (const a of assets.slice(0, 40)) {
+    const name = a.asset_name_ascii || (a.asset_name ? truncHash(a.asset_name, 6) : 'ADA/AP3X');
+    html += '<tr><td style="font-weight:600;color:var(--cyan)">' + name + '</td>' +
+      '<td><span class="hash">' + truncHash(a.policy_id||'', 10) + '</span></td>' +
+      '<td><span class="hash">' + truncHash(a.fingerprint||'', 10) + '</span></td></tr>';
+  }
+  if (assets.length > 40) html += '<tr><td colspan="3" style="color:var(--text-muted);text-align:center">... and ' + (assets.length-40) + ' more (export CSV)</td></tr>';
+  html += '</tbody></table>';
+  document.getElementById('assetsBody').innerHTML = html;
+}
+
+function renderParams(p) {
+  const items = [
+    ['Min Fee (A)', fmtNum(p.min_fee_a)], ['Min Fee (B)', fmtNum(p.min_fee_b)],
+    ['Max Block Size', p.max_block_size ? (p.max_block_size/1024)+'KB' : '--'], ['Max Tx Size', p.max_tx_size ? (p.max_tx_size/1024)+'KB' : '--'],
+    ['Key Deposit', p.key_deposit ? fmtLovelace(p.key_deposit)+' AP3X' : '--'], ['Pool Deposit', p.pool_deposit ? fmtLovelace(p.pool_deposit)+' AP3X' : '--'],
+    ['Max Epoch', fmtNum(p.max_epoch)], ['Optimal Pool Count', fmtNum(p.optimal_pool_count)],
+    ['Min Pool Cost', p.min_pool_cost ? fmtLovelace(p.min_pool_cost)+' AP3X' : '--'], ['Price Mem', p.price_mem || '--'],
+    ['Price Step', p.price_step || '--'], ['Max Val Size', fmtNum(p.max_val_size)],
+    ['Collateral %', p.collateral_percent ? p.collateral_percent+'%' : '--'], ['Max Collateral Inputs', fmtNum(p.max_collateral_inputs)],
+    ['Coins Per UTxO', p.coins_per_utxo_size ? fmtLovelace(p.coins_per_utxo_size)+' AP3X' : '0'], ['Cost Models', p.cost_models ? Object.keys(p.cost_models).join(', ') : '--'],
+  ];
+  let html = '<div class="param-grid">';
+  items.forEach(([k,v]) => html += '<div class="param-row"><span class="param-key">' + k + '</span><span class="param-val">' + v + '</span></div>');
+  html += '</div>';
+  document.getElementById('paramsBody').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// RENDERERS — NEXUS
+// ═══════════════════════════════════════════
+function renderNexus(blockData, accounts, contracts, pageStats) {
+  // Block height from API
+  let blockHeight = 0;
+  if (blockData && blockData.result) {
+    blockHeight = parseInt(blockData.result, 16);
+  }
+
+  // Page stats fallback
+  const txns = pageStats?.txns || 0;
+  const wallets = pageStats?.addresses || 0;
+  const contractCount = contracts ? contracts.length : 0;
+
+  // Banner
+  if (blockHeight > 0) document.getElementById('nexusBlock').textContent = fmtNum(blockHeight);
+  if (txns > 0) document.getElementById('nexusTxns').textContent = fmtNum(txns);
+  if (wallets > 0) document.getElementById('nexusWallets').textContent = fmtNum(wallets);
+
+  // KPI cards
+  if (blockHeight > 0) document.getElementById('kpiNexusBlock').textContent = fmtNum(blockHeight);
+  if (wallets > 0) {
+    document.getElementById('kpiNexusWallets').textContent = fmtNum(wallets);
+    document.getElementById('kpiNexusWalletsSub').textContent = 'EVM addresses';
+  }
+  if (txns > 0) {
+    document.getElementById('kpiNexusTxns').textContent = fmtNum(txns);
+  }
+  document.getElementById('kpiNexusContracts').textContent = fmtNum(contractCount);
+
+  // Network overview card
+  let overviewHtml = '<div class="param-grid">';
+  overviewHtml += '<div class="param-row"><span class="param-key">Chain Type</span><span class="param-val">EVM (Polygon Edge)</span></div>';
+  overviewHtml += '<div class="param-row"><span class="param-key">Consensus</span><span class="param-val">IBFT 2.0</span></div>';
+  overviewHtml += '<div class="param-row"><span class="param-key">Block Height</span><span class="param-val">' + fmtNum(blockHeight) + '</span></div>';
+  overviewHtml += '<div class="param-row"><span class="param-key">Total Transactions</span><span class="param-val">' + fmtNum(txns) + '</span></div>';
+  overviewHtml += '<div class="param-row"><span class="param-key">Wallet Addresses</span><span class="param-val">' + fmtNum(wallets) + '</span></div>';
+  overviewHtml += '<div class="param-row"><span class="param-key">Smart Contracts</span><span class="param-val">' + fmtNum(contractCount) + '</span></div>';
+  overviewHtml += '<div class="param-row"><span class="param-key">Avg Block Time</span><span class="param-val">5 seconds</span></div>';
+  overviewHtml += '<div class="param-row"><span class="param-key">Gas Price</span><span class="param-val">0.01 Gwei</span></div>';
+  overviewHtml += '<div class="param-row"><span class="param-key">Native Token</span><span class="param-val">AP3X</span></div>';
+  overviewHtml += '<div class="param-row"><span class="param-key">Explorer</span><span class="param-val"><a href="https://nexus.apexscan.org" target="_blank" style="color:var(--green);">nexus.apexscan.org</a></span></div>';
+  overviewHtml += '</div>';
+  document.getElementById('nexusOverviewBody').innerHTML = overviewHtml;
+
+  // Wallets card — top addresses from accounts API
+  if (accounts && accounts.result && accounts.result.length > 0) {
+    const addrs = accounts.result;
+    document.getElementById('nexusAddrCount').textContent = addrs.length + ' shown';
+    let whtml = '';
+    addrs.forEach((a, i) => {
+      const bal = Number(a.balance) / 1e18;
+      const balFmt = bal >= 1e6 ? (bal/1e6).toFixed(2) + 'M' : bal >= 1e3 ? (bal/1e3).toFixed(1) + 'K' : bal.toFixed(4);
+      whtml += '<div class="pool-row" style="grid-template-columns:auto 1fr auto;">' +
+        '<span style="font-size:11px;color:var(--text-dim);width:24px;text-align:right;margin-right:8px;">' + (i + 1) + '</span>' +
+        '<span style="font-size:11px;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;">' +
+        '<a href="https://nexus.apexscan.org/address/' + a.address + '" target="_blank" style="color:var(--text);text-decoration:none;">' + truncHash(a.address, 10) + '</a></span>' +
+        '<span style="font-size:12px;font-family:var(--mono);font-weight:600;white-space:nowrap;">' + balFmt + ' AP3X</span></div>';
+    });
+    document.getElementById('nexusWalletsBody').innerHTML = whtml;
+
+    CSV_DATA['nexus-wallets'] = {
+      headers: ['Rank', 'Address', 'Balance (Wei)', 'Balance (AP3X)'],
+      rows: addrs.map((a, i) => [i + 1, a.address, a.balance, (Number(a.balance) / 1e18).toFixed(6)])
+    };
+  }
+
+  // Contracts card
+  if (contracts && contracts.length > 0) {
+    document.getElementById('nexusContractCount').textContent = contracts.length;
+    let chtml = '';
+    contracts.forEach(c => {
+      const verified = c.ABI !== 'Contract source code not verified';
+      chtml += '<div class="pool-row" style="grid-template-columns:1fr auto;">' +
+        '<span style="font-size:11px;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;">' +
+        '<a href="https://nexus.apexscan.org/address/' + c.Address + '" target="_blank" style="color:var(--text);text-decoration:none;">' + truncHash(c.Address, 10) + '</a></span>' +
+        '<span class="tag ' + (verified ? 'tag-green' : '') + '" style="' + (verified ? 'background:var(--green-dim);color:var(--green);' : 'background:var(--surface-alt);color:var(--text-dim);') + 'font-size:9px;">' + (verified ? 'Verified' : 'Unverified') + '</span></div>';
+    });
+    document.getElementById('nexusContractsBody').innerHTML = chtml;
+
+    CSV_DATA['nexus-contracts'] = {
+      headers: ['Address', 'Verified'],
+      rows: contracts.map(c => [c.Address, c.ABI !== 'Contract source code not verified' ? 'Yes' : 'No'])
+    };
+  }
+
+  // Transactions placeholder — we'll show the overview stats
+  const txnHtml = '<div style="padding:18px;text-align:center;">' +
+    '<div style="font-size:36px;font-weight:800;font-family:var(--mono);color:var(--green);margin-bottom:8px;">' + fmtNum(txns) + '</div>' +
+    '<div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">Total Transactions</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+    '<div style="background:var(--surface-alt);border-radius:8px;padding:12px;text-align:center;">' +
+    '<div style="font-size:18px;font-weight:700;font-family:var(--mono);">' + fmtNum(wallets) + '</div>' +
+    '<div style="font-size:10px;color:var(--text-dim);">Unique Addresses</div></div>' +
+    '<div style="background:var(--surface-alt);border-radius:8px;padding:12px;text-align:center;">' +
+    '<div style="font-size:18px;font-weight:700;font-family:var(--mono);">' + fmtNum(contractCount) + '</div>' +
+    '<div style="font-size:10px;color:var(--text-dim);">Smart Contracts</div></div>' +
+    '</div></div>';
+  document.getElementById('nexusTxnsBody').innerHTML = txnHtml;
+}
+
+// ═══════════════════════════════════════════
+// RENDERERS — MARKET
+// ═══════════════════════════════════════════
+function renderHero(cg) {
+  if (!cg) return;
+  if (cg.image) { const img = document.getElementById('heroImg'); img.src = cg.image; img.style.display = 'block'; }
+  document.getElementById('heroRank').textContent = '#' + (cg.market_cap_rank || '--');
+  document.getElementById('heroPrice').textContent = fmtPrice(cg.current_price);
+  const chg24 = cg.price_change_percentage_24h || 0;
+  const el24 = document.getElementById('heroChange24h');
+  el24.textContent = fmtPct(chg24); el24.className = 'change ' + pctClass(chg24);
+  const btcPrice = cg.current_price / 85000;
+  const ethPrice = cg.current_price / 2100;
+  document.getElementById('heroBtc').textContent = btcPrice.toExponential(3) + ' BTC';
+  document.getElementById('heroEth').textContent = ethPrice.toExponential(3) + ' ETH';
+  document.getElementById('heroLow').textContent = fmtPrice(cg.low_24h);
+  document.getElementById('heroHigh').textContent = fmtPrice(cg.high_24h);
+  if (cg.high_24h && cg.low_24h && cg.high_24h > cg.low_24h) {
+    const pct = ((cg.current_price - cg.low_24h) / (cg.high_24h - cg.low_24h)) * 100;
+    document.getElementById('heroRangeFill').style.width = Math.min(100, Math.max(0, pct)) + '%';
+  }
+  if (cg.sparkline_in_7d && cg.sparkline_in_7d.price) drawSparkline(cg.sparkline_in_7d.price);
+}
+
+function renderChanges(cg) {
+  if (!cg) return;
+  const map = { 'chg1h': cg.price_change_percentage_1h_in_currency, 'chg24h': cg.price_change_percentage_24h_in_currency, 'chg7d': cg.price_change_percentage_7d_in_currency, 'chg14d': cg.price_change_percentage_14d_in_currency, 'chg30d': cg.price_change_percentage_30d_in_currency };
+  for (const [id, val] of Object.entries(map)) {
+    const el = document.getElementById(id);
+    if (el && val != null) { el.textContent = fmtPct(val); el.className = 'pct ' + pctClass(val); }
+  }
+}
+
+function renderMarketStats(cg, dexPairs) {
+  if (!cg) return;
+  const cexVol = cg.total_volume || 0;
+  let dexVol = 0, totalLiq = 0, activePairs = 0;
+  dexPairs.forEach(p => { dexVol += Number(p.volume?.h24 || 0); totalLiq += Number(p.liquidity?.usd || 0); if (Number(p.volume?.h24 || 0) > 0 || Number(p.liquidity?.usd || 0) > 0) activePairs++; });
+  const combinedVol = cexVol + dexVol;
+  document.getElementById('statMcap').textContent = fmtUsd(cg.market_cap);
+  document.getElementById('statMcapSub').textContent = 'Rank #' + (cg.market_cap_rank || '--');
+  document.getElementById('statFdv').textContent = fmtUsd(cg.fully_diluted_valuation);
+  document.getElementById('statVol').textContent = fmtUsd(combinedVol);
+  document.getElementById('statVolSub').textContent = 'CEX: ' + fmtUsd(cexVol) + ' + DEX: ' + fmtUsd(dexVol);
+  document.getElementById('statVolMcap').textContent = cg.market_cap > 0 ? (combinedVol / cg.market_cap * 100).toFixed(2) + '%' : '--';
+  document.getElementById('statCirc').textContent = fmtSupply(cg.circulating_supply) + ' AP3X';
+  document.getElementById('statCircSub').textContent = ((cg.circulating_supply / cg.max_supply) * 100).toFixed(1) + '% of max';
+  document.getElementById('statMax').textContent = fmtSupply(cg.max_supply) + ' AP3X';
+  document.getElementById('statLiq').textContent = fmtUsd(totalLiq);
+  document.getElementById('statLiqSub').textContent = activePairs + ' DEX pools';
+  document.getElementById('statPairs').textContent = activePairs + (cg.total_volume > 0 ? ' + 1 CEX' : '');
+  // Supply visual
+  document.getElementById('mktSupplyCirc').textContent = fmtSupply(cg.circulating_supply);
+  document.getElementById('mktSupplyMax').textContent = fmtSupply(cg.max_supply);
+  const supplyPct = (cg.circulating_supply / cg.max_supply * 100).toFixed(1);
+  document.getElementById('mktSupplyFill').style.width = supplyPct + '%';
+  document.getElementById('mktSupplyPct').textContent = supplyPct + '% circulating';
+  // ATH/ATL
+  document.getElementById('athVal').textContent = fmtPrice(cg.ath);
+  const athChg = document.getElementById('athChange');
+  athChg.textContent = fmtPct(cg.ath_change_percentage); athChg.className = 'ath-change ' + pctClass(cg.ath_change_percentage);
+  document.getElementById('athDate').textContent = fmtDate(cg.ath_date);
+  document.getElementById('atlVal').textContent = fmtPrice(cg.atl);
+  const atlChg = document.getElementById('atlChange');
+  atlChg.textContent = fmtPct(cg.atl_change_percentage); atlChg.className = 'ath-change ' + pctClass(cg.atl_change_percentage);
+  document.getElementById('atlDate').textContent = fmtDate(cg.atl_date);
+}
+
+function renderPairs(cgTickers, dexPairs) {
+  const allPairs = [];
+  cgTickers.forEach(t => {
+    allPairs.push({ pair: t.base + '/' + t.target, exchange: t.market?.name || 'Unknown', chain: 'cex', chainLabel: t.market?.name === 'Minswap' ? 'Cardano' : 'CEX', chainClass: t.market?.name === 'Minswap' ? 'chain-cardano' : 'chain-cex', price: t.converted_last?.usd || t.last || 0, volume24h: t.converted_volume?.usd || 0, liquidity: 0, change24h: null, buys24h: null, sells24h: null, spread: t.bid_ask_spread_percentage || 0, url: t.trade_url || '', source: 'coingecko' });
+  });
+  dexPairs.forEach(p => {
+    const chain = p.chainId || 'unknown';
+    allPairs.push({ pair: (p.baseToken?.symbol || '?') + '/' + (p.quoteToken?.symbol || '?'), exchange: (p.dexId || 'DEX') + (p.labels?.length ? ' ' + p.labels[0] : ''), chain: chain, chainLabel: chain.charAt(0).toUpperCase() + chain.slice(1), chainClass: chain === 'base' ? 'chain-base' : chain === 'cardano' ? 'chain-cardano' : 'chain-cex', price: Number(p.priceUsd || 0), volume24h: Number(p.volume?.h24 || 0), liquidity: Number(p.liquidity?.usd || 0), change24h: p.priceChange?.h24 != null ? Number(p.priceChange.h24) : null, buys24h: p.txns?.h24?.buys || 0, sells24h: p.txns?.h24?.sells || 0, spread: 0, url: p.url || '', source: 'dexscreener' });
+  });
+  // Deduplicate
+  const deduped = [];
+  const seen = new Set();
+  allPairs.filter(p => p.source === 'dexscreener').forEach(p => { const key = p.exchange.toLowerCase() + '-' + p.pair.toLowerCase(); if (!seen.has(key)) { seen.add(key); deduped.push(p); } });
+  allPairs.filter(p => p.source === 'coingecko').forEach(p => { const exNorm = p.exchange.toLowerCase(); const isDupe = deduped.some(d => d.exchange.toLowerCase().includes(exNorm) || exNorm.includes(d.exchange.toLowerCase().split(' ')[0])); if (!isDupe) deduped.push(p); });
+  deduped.sort((a, b) => b.volume24h - a.volume24h);
+  let totalVol = 0, cexVol = 0, dexVol = 0, totalLiq = 0, totalTxns = 0;
+  deduped.forEach(p => { totalVol += p.volume24h; if (p.source === 'coingecko' && p.chainLabel === 'CEX') cexVol += p.volume24h; else dexVol += p.volume24h; totalLiq += p.liquidity; totalTxns += (p.buys24h || 0) + (p.sells24h || 0); });
+  document.getElementById('aggVol24').textContent = fmtUsd(totalVol);
+  document.getElementById('aggVolCex').textContent = fmtUsd(cexVol);
+  document.getElementById('aggVolDex').textContent = fmtUsd(dexVol);
+  document.getElementById('aggLiq').textContent = fmtUsd(totalLiq);
+  document.getElementById('aggTxns').textContent = fmtNum(totalTxns);
+  document.getElementById('pairsCountTag').textContent = deduped.length + ' pairs';
+  let html = '';
+  deduped.forEach(p => {
+    const chgText = p.change24h != null ? fmtPct(p.change24h) : '--';
+    const chgCls = p.change24h != null ? pctClass(p.change24h) : '';
+    const txnText = p.buys24h != null ? p.buys24h + ' / ' + p.sells24h : '--';
+    const spreadText = p.spread > 0 ? p.spread.toFixed(2) + '%' : '--';
+    const linkHtml = p.url ? '<a class="pair-link" href="' + p.url + '" target="_blank" rel="noopener">Trade</a>' : '';
+    html += '<div class="pair-row"><div class="pair-name"><span class="sym">' + p.pair + ' ' + linkHtml + '</span><span class="dex">' + p.exchange + ' <span class="chain-badge ' + p.chainClass + '">' + p.chainLabel + '</span></span></div><div class="pair-val">' + fmtPrice(p.price) + '</div><div class="pair-val">' + fmtUsd(p.volume24h) + '</div><div class="pair-val">' + (p.liquidity > 0 ? fmtUsd(p.liquidity) : '--') + '</div><div class="pair-val ' + chgCls + '">' + chgText + '</div><div class="pair-val">' + txnText + '</div><div class="pair-val">' + spreadText + '</div></div>';
+  });
+  document.getElementById('pairsBody').innerHTML = html || '<div class="empty-state">No pairs found</div>';
+  CSV_DATA['pairs'] = { headers: ['Pair', 'Exchange', 'Chain', 'Price (USD)', 'Volume 24h (USD)', 'Liquidity (USD)', 'Change 24h %', 'Buys 24h', 'Sells 24h', 'Spread %', 'Source'], rows: deduped.map(p => [p.pair, p.exchange, p.chainLabel, p.price, p.volume24h, p.liquidity, p.change24h || '', p.buys24h || '', p.sells24h || '', p.spread || '', p.source]) };
+  return deduped;
+}
+
+function renderVolByDex(pairs) {
+  const byDex = {};
+  pairs.forEach(p => { const key = p.exchange; if (!byDex[key]) byDex[key] = { vol: 0, liq: 0, chain: p.chainLabel }; byDex[key].vol += p.volume24h; byDex[key].liq += p.liquidity; });
+  const sorted = Object.entries(byDex).sort((a, b) => b[1].vol - a[1].vol);
+  const maxVol = sorted.length > 0 ? sorted[0][1].vol : 1;
+  let html = '';
+  sorted.forEach(([name, data]) => {
+    const pct = maxVol > 0 ? (data.vol / maxVol * 100) : 0;
+    html += '<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-size:12px;font-weight:600;">' + name + ' <span style="font-size:10px;color:var(--text-dim);">' + data.chain + '</span></span><span style="font-size:12px;font-family:var(--mono);font-weight:600;">' + fmtUsd(data.vol) + '</span></div><div style="width:100%;height:8px;background:var(--surface-alt);border-radius:4px;overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,var(--accent),var(--orange));border-radius:4px;transition:width 0.5s;"></div></div></div>';
+  });
+  document.getElementById('volByDex').innerHTML = html || '<div class="empty-state">No data</div>';
+}
+
+function renderLiqByPair(pairs) {
+  const withLiq = pairs.filter(p => p.liquidity > 0).sort((a, b) => b.liquidity - a.liquidity);
+  const maxLiq = withLiq.length > 0 ? withLiq[0].liquidity : 1;
+  let html = '';
+  withLiq.forEach(p => {
+    const pct = maxLiq > 0 ? (p.liquidity / maxLiq * 100) : 0;
+    html += '<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-size:12px;font-weight:600;">' + p.pair + ' <span style="font-size:10px;color:var(--text-dim);">' + p.exchange + '</span></span><span style="font-size:12px;font-family:var(--mono);font-weight:600;">' + fmtUsd(p.liquidity) + '</span></div><div style="width:100%;height:8px;background:var(--surface-alt);border-radius:4px;overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:4px;transition:width 0.5s;"></div></div></div>';
+  });
+  document.getElementById('liqByPair').innerHTML = html || '<div class="empty-state">No liquidity data</div>';
+}
+
+function renderTxnActivity(pairs) {
+  const dexP = pairs.filter(p => p.buys24h != null && (p.buys24h > 0 || p.sells24h > 0));
+  if (dexP.length === 0) { document.getElementById('txnActivity').innerHTML = '<div class="empty-state">No transaction data</div>'; return; }
+  let totalBuys = 0, totalSells = 0;
+  dexP.forEach(p => { totalBuys += p.buys24h || 0; totalSells += p.sells24h || 0; });
+  const totalTxns = totalBuys + totalSells;
+  const buyPct = totalTxns > 0 ? (totalBuys / totalTxns * 100) : 50;
+  let html = '<div style="margin-bottom:20px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:13px;font-weight:600;color:var(--green);">Buys: ' + totalBuys + ' (' + buyPct.toFixed(1) + '%)</span><span style="font-size:13px;font-weight:600;color:var(--red);">Sells: ' + totalSells + ' (' + (100 - buyPct).toFixed(1) + '%)</span></div><div style="width:100%;height:14px;background:var(--red);border-radius:7px;overflow:hidden;"><div style="width:' + buyPct + '%;height:100%;background:var(--green);border-radius:7px 0 0 7px;transition:width 0.5s;"></div></div><div style="text-align:center;margin-top:4px;font-size:11px;color:var(--text-dim);">Total: ' + totalTxns + ' transactions across ' + dexP.length + ' pairs</div></div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">';
+  dexP.sort((a, b) => (b.buys24h + b.sells24h) - (a.buys24h + a.sells24h));
+  dexP.forEach(p => {
+    const pB = p.buys24h || 0, pS = p.sells24h || 0, pT = pB + pS;
+    const pBPct = pT > 0 ? (pB / pT * 100) : 50;
+    html += '<div style="background:var(--surface-alt);border-radius:8px;padding:12px;"><div style="font-size:12px;font-weight:600;margin-bottom:6px;">' + p.pair + ' <span style="color:var(--text-dim);font-size:10px;">' + p.exchange + '</span></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span style="color:var(--green);">' + pB + ' buys</span><span style="color:var(--red);">' + pS + ' sells</span></div><div style="width:100%;height:6px;background:var(--red);border-radius:3px;overflow:hidden;"><div style="width:' + pBPct + '%;height:100%;background:var(--green);border-radius:3px 0 0 3px;"></div></div></div>';
+  });
+  html += '</div>';
+  document.getElementById('txnActivity').innerHTML = html;
+}
+
+function drawSparkline(prices) {
+  const canvas = document.getElementById('sparkCanvas');
+  if (!canvas) return;
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth; canvas.height = container.clientHeight;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height, pad = 4;
+  const min = Math.min(...prices), max = Math.max(...prices), range = max - min || 1;
+  const isUp = prices[prices.length - 1] >= prices[0];
+  const color = isUp ? '#22c55e' : '#ef4444';
+  ctx.clearRect(0, 0, w, h);
+  ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2;
+  prices.forEach((p, i) => { const x = pad + (i / (prices.length - 1)) * (w - pad * 2); const y = h - pad - ((p - min) / range) * (h - pad * 2); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+  ctx.stroke();
+  const lastX = pad + ((prices.length - 1) / (prices.length - 1)) * (w - pad * 2);
+  ctx.lineTo(lastX, h); ctx.lineTo(pad, h); ctx.closePath();
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, color + '30'); grad.addColorStop(1, color + '05');
+  ctx.fillStyle = grad; ctx.fill();
+  const lastY = h - pad - ((prices[prices.length - 1] - min) / range) * (h - pad * 2);
+  ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+  ctx.fillStyle = '#7c8098'; ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'left'; ctx.fillText('$' + prices[0].toFixed(4), pad + 2, 14);
+  ctx.textAlign = 'right'; ctx.fillText('$' + prices[prices.length - 1].toFixed(4), w - pad - 2, 14);
+  ctx.fillText('7d', w - pad - 2, h - 4);
+}
+
+// ═══════════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════════
+function getChartColors() {
+  const style = getComputedStyle(document.documentElement);
+  return {
+    text: style.getPropertyValue('--text').trim(),
+    textDim: style.getPropertyValue('--text-dim').trim(),
+    textMuted: style.getPropertyValue('--text-muted').trim(),
+    accent: style.getPropertyValue('--accent').trim() || '#f59e0b',
+    accentHover: style.getPropertyValue('--accent-hover').trim() || '#fbbf24',
+    surface: style.getPropertyValue('--surface-alt').trim(),
+    border: style.getPropertyValue('--border').trim(),
+    green: '#22c55e', red: '#ef4444', cyan: '#06b6d4', purple: '#a855f7', orange: '#f97316', indigo: '#6366f1',
+  };
+}
+
+// ═══════════════════════════════════════════
+// BRIDGED TOKEN — bAP3X on Base
+// ═══════════════════════════════════════════
+const BAP3X_CONTRACT = '0x9208d82F121806A34a39bB90733b4C5c54F3993e';
+let bridgeLiqChartInst = null;
+
+async function fetchBridgedToken() {
+  try {
+    const r = await fetch(DEXSCREENER + '/latest/dex/tokens/' + BAP3X_CONTRACT);
+    if (!r.ok) return [];
+    const d = await r.json();
+    return (d.pairs || []).filter(p => (p.baseToken?.symbol || '').toLowerCase() === 'bap3x');
+  } catch { return []; }
+}
+
+function renderBridgedOverview(pairs) {
+  if (!pairs || pairs.length === 0) {
+    document.getElementById('bridgedOverviewBody').innerHTML = '<div class="empty-state">Could not load bAP3X data</div>';
+    return;
+  }
+  let totalVol = 0, totalLiq = 0, totalBuys = 0, totalSells = 0, bestPrice = 0;
+  pairs.forEach(p => {
+    totalVol += Number(p.volume?.h24 || 0);
+    totalLiq += Number(p.liquidity?.usd || 0);
+    totalBuys += Number(p.txns?.h24?.buys || 0);
+    totalSells += Number(p.txns?.h24?.sells || 0);
+    if (Number(p.priceUsd || 0) > bestPrice) bestPrice = Number(p.priceUsd);
+  });
+  const topPair = pairs[0];
+  const chg24 = topPair.priceChange?.h24;
+  const pairAge = topPair.pairCreatedAt ? fmtDate(new Date(topPair.pairCreatedAt)) : '--';
+
+  let html = '<div class="param-grid">';
+  html += '<div class="param-row"><span class="param-key">Token</span><span class="param-val" style="color:var(--cyan);">bAP3X</span></div>';
+  html += '<div class="param-row"><span class="param-key">Chain</span><span class="param-val">Base (EVM L2)</span></div>';
+  html += '<div class="param-row"><span class="param-key">Contract</span><span class="param-val" style="font-size:9px;">' + truncHash(BAP3X_CONTRACT, 8) + '</span></div>';
+  html += '<div class="param-row"><span class="param-key">Price (USD)</span><span class="param-val" style="color:var(--accent-hover);">' + fmtPrice(bestPrice) + '</span></div>';
+  html += '<div class="param-row"><span class="param-key">24h Change</span><span class="param-val" style="color:' + (chg24 >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + fmtPct(chg24) + '</span></div>';
+  html += '<div class="param-row"><span class="param-key">24h Volume</span><span class="param-val">' + fmtUsd(totalVol) + '</span></div>';
+  html += '<div class="param-row"><span class="param-key">Total Liquidity</span><span class="param-val">' + fmtUsd(totalLiq) + '</span></div>';
+  html += '<div class="param-row"><span class="param-key">Active Pairs</span><span class="param-val">' + pairs.length + '</span></div>';
+  html += '<div class="param-row"><span class="param-key">24h Buys / Sells</span><span class="param-val"><span style="color:var(--green)">' + totalBuys + '</span> / <span style="color:var(--red)">' + totalSells + '</span></span></div>';
+  html += '<div class="param-row"><span class="param-key">First Pair Created</span><span class="param-val">' + pairAge + '</span></div>';
+  html += '</div>';
+  document.getElementById('bridgedOverviewBody').innerHTML = html;
+}
+
+function renderBridgedPairs(pairs) {
+  document.getElementById('bridgedPairsTag').textContent = pairs.length + ' pairs';
+  document.getElementById('bridgedPairCount').textContent = pairs.length + ' pools';
+  if (!pairs || pairs.length === 0) {
+    document.getElementById('bridgedPairsBody').innerHTML = '<div class="empty-state">No bAP3X pairs found</div>';
+    return;
+  }
+  const sorted = [...pairs].sort((a, b) => Number(b.volume?.h24 || 0) - Number(a.volume?.h24 || 0));
+  CSV_DATA['bridged-pairs'] = {
+    headers: ['Pair', 'DEX', 'Price (USD)', 'Volume 24h', 'Liquidity', 'Change 24h %', 'Buys 24h', 'Sells 24h', 'Pair Address', 'Created'],
+    rows: sorted.map(p => [
+      (p.baseToken?.symbol || '?') + '/' + (p.quoteToken?.symbol || '?'),
+      p.dexId || '', p.priceUsd || 0, p.volume?.h24 || 0, p.liquidity?.usd || 0,
+      p.priceChange?.h24 || '', p.txns?.h24?.buys || 0, p.txns?.h24?.sells || 0,
+      p.pairAddress || '', p.pairCreatedAt ? new Date(p.pairCreatedAt).toISOString().slice(0, 10) : ''
+    ])
+  };
+  let html = '';
+  sorted.forEach(p => {
+    const pair = (p.baseToken?.symbol || '?') + '/' + (p.quoteToken?.symbol || '?');
+    const dex = (p.dexId || 'DEX') + (p.labels?.length ? ' ' + p.labels[0] : '');
+    const price = fmtPrice(Number(p.priceUsd || 0));
+    const vol = fmtUsd(Number(p.volume?.h24 || 0));
+    const liq = Number(p.liquidity?.usd || 0) > 0 ? fmtUsd(p.liquidity.usd) : '--';
+    const chg = p.priceChange?.h24 != null ? fmtPct(p.priceChange.h24) : '--';
+    const chgCls = p.priceChange?.h24 != null ? pctClass(p.priceChange.h24) : '';
+    const buys = p.txns?.h24?.buys || 0;
+    const sells = p.txns?.h24?.sells || 0;
+    const created = p.pairCreatedAt ? fmtDate(new Date(p.pairCreatedAt)) : '--';
+    const url = p.url || '';
+    const linkHtml = url ? '<a class="pair-link" href="' + url + '" target="_blank" rel="noopener">Trade</a>' : '';
+    html += '<div class="pair-row">' +
+      '<div class="pair-name"><span class="sym">' + pair + ' ' + linkHtml + '</span><span class="dex">' + dex + ' <span class="chain-badge chain-base">Base</span></span></div>' +
+      '<div class="pair-val">' + price + '</div>' +
+      '<div class="pair-val">' + vol + '</div>' +
+      '<div class="pair-val">' + liq + '</div>' +
+      '<div class="pair-val ' + chgCls + '">' + chg + '</div>' +
+      '<div class="pair-val">' + buys + ' / ' + sells + '</div>' +
+      '<div class="pair-val" style="font-size:10px;color:var(--text-dim);">' + created + '</div>' +
+      '</div>';
+  });
+  document.getElementById('bridgedPairsBody').innerHTML = html || '<div class="empty-state">No pairs</div>';
+}
+
+function buildBridgeLiqChart(pairs) {
+  const ctx = document.getElementById('bridgeLiqChart');
+  if (!ctx) return;
+  if (bridgeLiqChartInst) bridgeLiqChartInst.destroy();
+  const c = getChartColors();
+  const withLiq = pairs.filter(p => Number(p.liquidity?.usd || 0) > 0).sort((a, b) => Number(b.liquidity.usd) - Number(a.liquidity.usd));
+  if (withLiq.length === 0) return;
+  const labels = withLiq.map(p => (p.baseToken?.symbol || '?') + '/' + (p.quoteToken?.symbol || '?') + ' (' + (p.dexId || '') + ')');
+  const data = withLiq.map(p => Number(p.liquidity.usd));
+  const colors = [c.cyan, c.indigo, c.purple, c.accent, c.green, c.orange, c.red];
+  bridgeLiqChartInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: labels.map((_, i) => colors[i % colors.length] + 'cc'), borderColor: labels.map((_, i) => colors[i % colors.length]), borderWidth: 2, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '50%',
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { color: c.textDim, font: { size: 9 }, padding: 8, usePointStyle: true, pointStyle: 'circle' } },
+        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtUsd(ctx.parsed) } }
+      }
+    }
+  });
+}
+
+async function refreshBridgedToken() {
+  const pairs = await fetchBridgedToken();
+  renderBridgedOverview(pairs);
+  renderBridgedPairs(pairs);
+  buildBridgeLiqChart(pairs);
+}
+
+// ═══════════════════════════════════════════
+// MAIN REFRESH
+// ═══════════════════════════════════════════
+let refreshing = false;
+
+async function refreshAll() {
+  if (refreshing) return;
+  refreshing = true;
+  document.getElementById('refreshBtn').classList.add('spinning');
+  document.getElementById('errorBanner').classList.remove('visible');
+  const errors = [];
+
+  try {
+  // Fire all requests in parallel
+  const results = await Promise.allSettled([
+    // Vector (Koios) — indices 0-7
+    fetchTip(),           // 0
+    fetchParams(),        // 1
+    fetchBlocks(),        // 2
+    fetchTotals(),        // 3
+    fetchPoolList(),      // 4
+    fetchAccountList(),   // 5
+    fetchAssetList(),     // 6
+    Promise.all([fetchNativeScripts().catch(()=>[]), fetchPlutusScripts().catch(()=>[])]), // 7
+    // Prime — indices 8-11
+    fetchPrimeHeader(),       // 8
+    fetchPrimePools(),        // 9
+    fetchPrimeTokens(),       // 10
+    fetchPrimeTopAddresses(), // 11
+    // Nexus — indices 12-15
+    fetchNexusBlockNumber(),  // 12
+    fetchNexusAccounts(),     // 13
+    fetchNexusContracts(),    // 14
+    fetchNexusData(),         // 15
+    // Market — indices 16-18
+    fetchCoinGecko(),         // 16
+    fetchCoinGeckoTickers(),  // 17
+    fetchDexScreener(),       // 18
+    // News — index 19
+    fetchNews(),              // 19
+  ]);
+
+  const val = i => results[i].status === 'fulfilled' ? results[i].value : null;
+  const err = i => results[i].status === 'rejected' ? results[i].reason?.message : null;
+
+  // Vector rendering
+  try {
+  if (val(0) && val(1)) {
+    document.getElementById('vectorTab').classList.remove('offline');
+    renderVectorKPIs(val(0), val(1), val(3));
+    renderParams(val(1));
+  } else {
+    document.getElementById('vectorTab').classList.add('offline');
+    if (err(0)) errors.push('Koios tip: ' + err(0));
+  }
+  if (val(2)) renderBlocks(val(2));
+  if (val(4)) renderVectorPools(val(4));
+  if (val(5)) renderAccounts(val(5));
+  if (val(6)) renderAssets(val(6));
+  if (val(7)) renderScripts(val(7)[0], val(7)[1]);
+  } catch (e) { errors.push('Vector render: ' + e.message); console.error('Vector render error:', e); }
+
+  // Prime rendering
+  try {
+  if (val(8)) renderPrimeHeader(val(8));
+  renderPrimePools(val(9));
+  renderPrimeTokens(val(10));
+  renderPrimeAddresses(val(11));
+  if (err(9)) errors.push('Prime pools: ' + err(9));
+  } catch (e) { errors.push('Prime render: ' + e.message); console.error('Prime render error:', e); }
+
+  // Nexus rendering
+  try {
+  if (val(12) || val(15)) {
+    document.getElementById('nexusTab').classList.remove('offline');
+    renderNexus(val(12), val(13), val(14), val(15));
+  } else {
+    document.getElementById('nexusTab').classList.add('offline');
+    if (err(12)) errors.push('Nexus: ' + err(12));
+  }
+  } catch (e) { errors.push('Nexus render: ' + e.message); console.error('Nexus render error:', e); }
+
+  // Market rendering
+  try {
+  const cg = val(16);
+  const cgTickers = val(17) || [];
+  const dexPairs = val(18) || [];
+  renderHero(cg);
+  renderChanges(cg);
+  renderMarketStats(cg, dexPairs);
+  const allMktPairs = renderPairs(cgTickers, dexPairs);
+  renderVolByDex(allMktPairs);
+  renderLiqByPair(allMktPairs);
+  renderTxnActivity(allMktPairs);
+  } catch (e) { errors.push('Market render: ' + e.message); console.error('Market render error:', e); }
+
+  // News rendering
+  try { renderNews(val(19) || []); } catch (e) { errors.push('News render: ' + e.message); }
+
+  // Bridged token (bAP3X on Base)
+  try { await refreshBridgedToken(); } catch (e) { errors.push('Bridge: ' + e.message); }
+
+  } catch (outerErr) { errors.push('Refresh: ' + outerErr.message); console.error('Refresh error:', outerErr); }
+
+  // These ALWAYS run — never stall
+  try {
+    if (errors.length > 0) {
+      document.getElementById('errorText').textContent = errors.join(' | ');
+      document.getElementById('errorBanner').classList.add('visible');
+    }
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+  } catch (e) { console.error('Status update error:', e); }
+
+  refreshing = false;
+  document.getElementById('refreshBtn').classList.remove('spinning');
+}
+
+// Clock
+setInterval(() => { document.getElementById('clockBadge').textContent = new Date().toLocaleTimeString(); }, 1000);
+
+// Auto-refresh every 30s
+refreshAll();
+setInterval(refreshAll, 30000);
+
+// Resize sparkline on window resize
+window.addEventListener('resize', () => {
+  const canvas = document.getElementById('sparkCanvas');
+  if (canvas && canvas._prices) drawSparkline(canvas._prices);
+});
+</script>
+</body>
+</html>
