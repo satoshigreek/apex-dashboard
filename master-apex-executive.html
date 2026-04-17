@@ -329,7 +329,7 @@
       <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
       {
         "symbols": [
-          {"proName": "CRYPTO:AP3XUSD", "title": "AP3X/USD"},
+          {"proName": "AERODROMESLIPSTREAM:BAP3XUSDC_5B8BF0.USD", "title": "bAP3X/USDC"},
           {"proName": "CRYPTO:BTCUSD", "title": "BTC/USD"},
           {"proName": "CRYPTO:ETHUSD", "title": "ETH/USD"},
           {"proName": "CRYPTO:ADAUSD", "title": "ADA/USD"},
@@ -386,8 +386,8 @@
   <!-- TradingView AP3X Advanced Chart -->
   <div class="card" style="margin-bottom:24px;overflow:hidden;">
     <div class="card-header">
-      <span>AP3X / USD — TradingView Chart</span>
-      <a href="https://www.tradingview.com/symbols/CRYPTO-AP3XUSD/" target="_blank" rel="noopener" style="color:var(--purple);font-size:10px;text-decoration:none;">Open on TradingView &#8599;</a>
+      <span>bAP3X / USDC — 24h Chart (15m candles)</span>
+      <a href="https://www.tradingview.com/chart/?symbol=AERODROMESLIPSTREAM%3ABAP3XUSDC_5B8BF0.USD" target="_blank" rel="noopener" style="color:var(--purple);font-size:10px;text-decoration:none;">Open on TradingView &#8599;</a>
     </div>
     <div style="height:500px;">
       <div class="tradingview-widget-container" style="height:100%;width:100%;">
@@ -395,8 +395,9 @@
         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
         {
           "autosize": true,
-          "symbol": "CRYPTO:AP3XUSD",
-          "interval": "D",
+          "symbol": "AERODROMESLIPSTREAM:BAP3XUSDC_5B8BF0.USD",
+          "interval": "15",
+          "range": "1D",
           "timezone": "Etc/UTC",
           "theme": "dark",
           "style": "1",
@@ -782,7 +783,7 @@
 
   <footer>
     <span>Apex Fusion Ecosystem &middot; Vector Builder Kit &middot; Updated <span id="lastUpdate">--</span></span>
-    <span>Market: <a href="https://www.coingecko.com/en/coins/apex-4" target="_blank">CoinGecko</a> + <a href="https://dexscreener.com" target="_blank">DexScreener</a> + <a href="https://www.tradingview.com/symbols/CRYPTO-AP3XUSD/" target="_blank">TradingView</a> &middot; Prime: <a href="https://osam.apexfusion.org" target="_blank">OSAM</a> + <a href="https://beta-explorer-api.prime.testnet.apexfusion.org/api/v1" target="_blank">Explorer</a> &middot; Vector: <a href="https://koios.vector.testnet.apexfusion.org/api/v1" target="_blank">Koios</a> &middot; Nexus: <a href="https://nexus.apexscan.org" target="_blank">ApexScan</a></span>
+    <span>Market: <a href="https://www.coingecko.com/en/coins/apex-4" target="_blank">CoinGecko</a> + <a href="https://dexscreener.com" target="_blank">DexScreener</a> + <a href="https://www.tradingview.com/chart/?symbol=AERODROMESLIPSTREAM%3ABAP3XUSDC_5B8BF0.USD" target="_blank">TradingView</a> &middot; Prime: <a href="https://osam.apexfusion.org" target="_blank">OSAM</a> + <a href="https://beta-explorer-api.prime.testnet.apexfusion.org/api/v1" target="_blank">Explorer</a> &middot; Vector: <a href="https://koios.vector.testnet.apexfusion.org/api/v1" target="_blank">Koios</a> &middot; Nexus: <a href="https://nexus.apexscan.org" target="_blank">ApexScan</a></span>
   </footer>
 </div>
 
@@ -993,13 +994,22 @@ async function fetchDexScreener() {
 
 // News fetcher
 async function fetchNews() {
-  const query = encodeURIComponent('Apex Fusion Crypto Blockchain');
+  // Exclude "Apex Group" (unrelated financial services firm that pollutes results).
+  // Add more -"..." terms here if other noisy brands show up.
+  const query = encodeURIComponent('Apex Fusion Crypto Blockchain -"Apex Group"');
   const rssUrl = 'https://news.google.com/rss/search?q=' + query + '&hl=en-US&gl=US&ceid=US:en';
+  // Client-side filter backstop — Google News negative terms aren't always honored.
+  const BLOCKLIST = [/apex\s*group/i];
   try {
     const r = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl));
     if (!r.ok) return [];
     const d = await r.json();
-    const items = d.items || [];
+    let items = d.items || [];
+    // Drop any item where the title, description, or source matches the blocklist.
+    items = items.filter(item => {
+      const haystack = [item.title, item.description, item.author].filter(Boolean).join(' ');
+      return !BLOCKLIST.some(rx => rx.test(haystack));
+    });
     // Sort newest first
     items.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
     return items;
